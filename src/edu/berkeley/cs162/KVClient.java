@@ -57,7 +57,14 @@ public class KVClient implements KeyValueInterface {
 	
 	private Socket connectHost() throws KVException {
 	    // TODO: Implement Me!  
-		return null;
+    Socket socket;
+    try{
+      socket = new Socket(this.server, port);
+      return socket;
+    }catch (Exception e){
+      throw new KVException(null); 
+    }
+
 	}
 	
 	private void closeHost(Socket sock) throws KVException {
@@ -66,6 +73,12 @@ public class KVClient implements KeyValueInterface {
 	
 	public boolean put(String key, String value) throws KVException {
 	    // TODO: Implement Me!
+      try{
+        connectHost();
+
+      }catch(Exception e){
+        System.out.println("failed");
+      }
 	    return true;
 	}
 
