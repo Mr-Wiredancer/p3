@@ -1,3 +1,76 @@
+package edu.berkeley.cs162;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+/** 
+ * This is an generic class that should handle all TCP network connections 
+ * arriving on a given unique (host, port) tuple. Ensure that this class 
+ * remains generic by providing the connection handling logic in a NetworkHandler
+ */
+public class SocketServer {
+	String hostname;
+	int port;
+	NetworkHandler handler;
+	ServerSocket server;
+	
+	public SocketServer(String hostname, int port) {
+		this.hostname = hostname;
+		this.port = port;
+	}
+	
+	public void connect() throws IOException {
+    this.server = new ServerSocket(this.port);
+	}
+	
+	/**
+	 * Accept requests and service them asynchronously. 
+	 * @throws IOException if there is a network error (for instance if the socket is inadvertently closed) 
+	 */
+	public void run() throws IOException {
+	      // TODO: implement me
+    while(true){
+      Socket s = server.accept();
+      System.out.println("accepted a socket");
+      this.handler.handle(s);
+    }
+	}
+	
+	/** 
+	 * Add the network handler for the current socket server
+	 * @param handler is logic for servicing a network connection
+	 */
+	public void addHandler(NetworkHandler handler) {
+		this.handler = handler;
+	}
+
+	/**
+	 * Stop the ServerSocket
+	 */
+	public void stop() {
+	      // TODO: implement me
+    try{
+      this.server.close();
+    }catch(Exception e){
+    
+    }
+
+	}
+	
+	private void closeSocket() {
+	     // TODO: implement me
+    try{
+      this.server.close();
+    }catch(Exception e){
+    
+    }
+	}
+	
+	protected void finalize(){
+		closeSocket();
+	}
+}
 /**
  * Socket Server manages network connections 
  * 
@@ -28,74 +101,4 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package edu.berkeley.cs162;
 
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-/** 
- * This is an generic class that should handle all TCP network connections 
- * arriving on a given unique (host, port) tuple. Ensure that this class 
- * remains generic by providing the connection handling logic in a NetworkHandler
- */
-public class SocketServer {
-	String hostname;
-	int port;
-	NetworkHandler handler;
-	ServerSocket server;
-	
-	public SocketServer(String hostname, int port) {
-		this.hostname = hostname;
-		this.port = port;
-	}
-	
-	public void connect() throws IOException {
-    try{
-        this.server = new ServerSocket(this.port);
-    }catch(IOException e){
-      throw e;
-    }
-	}
-	
-	/**
-	 * Accept requests and service them asynchronously. 
-	 * @throws IOException if there is a network error (for instance if the socket is inadvertently closed) 
-	 */
-	public void run() throws IOException {
-	      // TODO: implement me
-    this.server = new ServerSocket(this.port);
-    while(true){
-      try{
-        Socket s = server.accept();
-        System.out.println("accepted a socket");
-        this.handler.handle(s);
-      }catch(Exception e){
-        System.out.println("acept failed");
-      }
-    }
-	}
-	
-	/** 
-	 * Add the network handler for the current socket server
-	 * @param handler is logic for servicing a network connection
-	 */
-	public void addHandler(NetworkHandler handler) {
-		this.handler = handler;
-	}
-
-	/**
-	 * Stop the ServerSocket
-	 */
-	public void stop() {
-	      // TODO: implement me
-	}
-	
-	private void closeSocket() {
-	     // TODO: implement me
-	}
-	
-	protected void finalize(){
-		closeSocket();
-	}
-}
