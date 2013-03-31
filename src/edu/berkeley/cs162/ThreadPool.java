@@ -1,11 +1,13 @@
 package edu.berkeley.cs162;
 
+import java.util.LinkedList;
+
 public class ThreadPool {
 	/**
 	 * Set of threads in the threadpool
 	 */
 	protected Thread threads[] = null;
-
+	LinkedList<Runnable> jobQueue = new LinkedList<Runnable>();
 	/**
 	 * Initialize the number of threads required in the threadpool. 
 	 * 
@@ -14,6 +16,8 @@ public class ThreadPool {
 	public ThreadPool(int size)
 	{      
 	    // TODO: implement me
+		threads = new Thread[size];
+		
 	}
 
 	/**
@@ -47,9 +51,11 @@ class WorkerThread extends Thread {
 	 * 
 	 * @param o the thread pool 
 	 */
+	private ThreadPool o;
+	
 	WorkerThread(ThreadPool o)
 	{
-	     // TODO: implement me
+		this.o = o;
 	}
 
 	/**
@@ -58,7 +64,27 @@ class WorkerThread extends Thread {
 	public void run()
 	{
 	      // TODO: implement me
+		Runnable r = null;
+		try {
+			r = o.getJob();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		while (true){
+			if (r !=null ){
+				
+			}else{
+				try {
+					r = o.getJob();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
 	}
+	
 }
 /**
  * A simple thread pool implementation
