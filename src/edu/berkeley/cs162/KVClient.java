@@ -30,11 +30,9 @@ public class KVClient implements KeyValueInterface {
     Socket socket;
     try{
       socket = new Socket(this.server, port);
-      InputStream in  = socket.getInputStream();
-      OutputStream out = socket.getOutputStream();
       return socket;
 
-    }catch (Exception e){
+    }catch (IOException e){
       throw new KVException(null); 
     }
 
@@ -42,27 +40,130 @@ public class KVClient implements KeyValueInterface {
 	
 	private void closeHost(Socket sock) throws KVException {
 	    // TODO: Implement Me!
+		try {
+			sock.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			throw new KVException(null);
+		}
 	}
 	
 	public boolean put(String key, String value) throws KVException {
 	    // TODO: Implement Me!
-      try{
-        connectHost();
-
-      }catch(Exception e){
-        System.out.println("failed");
-      }
-	    return true;
+		Socket sock = this.connectHost();
+		
+		OutputStream out = null;
+		InputStream in = null;
+		try {
+			out = sock.getOutputStream();
+			in = sock.getInputStream();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		KVMessage msg = new KVMessage(KVMessage.PUTTYPE);
+		msg.setKey(key);
+		msg.setValue(value);
+		
+		PrintWriter writer = new PrintWriter(out, true);
+		writer.println(msg.toXML());
+		try {
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		KVMessage response = new KVMessage(in);//we dont look at the response for now
+		
+		try {
+			in.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.closeHost(sock);
+		
+		return true;
 	}
 
 
 	public String get(String key) throws KVException {
 	    // TODO: Implement Me!
-	    return null;
+		Socket sock = this.connectHost();
+		
+		OutputStream out = null;
+		InputStream in = null;
+		try {
+			out = sock.getOutputStream();
+			in = sock.getInputStream();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		KVMessage msg = new KVMessage(KVMessage.GETTYPE);
+		msg.setKey(key);
+		
+		PrintWriter writer = new PrintWriter(out, true);
+		writer.println(msg.toXML());
+		try {
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		KVMessage response = new KVMessage(in);//we dont look at the response for now
+		
+		try {
+			in.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.closeHost(sock);
+		
+		return response.toXML(); // becuz we dont look at the response for now so we just output the whole message
+		
 	}
 	
 	public void del(String key) throws KVException {
 	    // TODO: Implement Me!
+		Socket sock = this.connectHost();
+		
+		OutputStream out = null;
+		InputStream in = null;
+		try {
+			out = sock.getOutputStream();
+			in = sock.getInputStream();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		KVMessage msg = new KVMessage(KVMessage.DELTYPE);
+		msg.setKey(key);
+		
+		PrintWriter writer = new PrintWriter(out, true);
+		writer.println(msg.toXML());
+		try {
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		KVMessage response = new KVMessage(in);//we dont look at the response for now
+		
+		try {
+			in.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.closeHost(sock);
 	}	
 }
 /**

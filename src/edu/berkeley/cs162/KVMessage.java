@@ -1,11 +1,17 @@
 package edu.berkeley.cs162;
 
 import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.io.*;
 import java.net.*;
 import javax.xml.parsers.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -89,6 +95,7 @@ public class KVMessage {
 		if ( msgType!=KVMessage.DELTYPE && msgType!=KVMessage.GETTYPE && msgType!=KVMessage.PUTTYPE && msgType!=KVMessage.RESPTYPE ){	
 			message = "Message format incorrect";
 			msgType = KVMessage.RESPTYPE;
+			throw new KVException(this);
 		}
 		this.message = message;
 		this.msgType = msgType;
@@ -106,36 +113,79 @@ public class KVMessage {
      */
 	public KVMessage(InputStream input) throws KVException {
 	     // TODO: implement me
-		DocumentBuilderFactory builderFactory =
-		        DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder = null;
+		BufferedReader in;
+		in = new BufferedReader(new InputStreamReader(input));
 		try {
-		    builder = builderFactory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-		    e.printStackTrace();  
-		}
-		try{
-			Document dom = builder.parse(input);
-			if (!isValidMessage(dom)){
-				this.msgType = KVMessage.RESPTYPE;
-				this.message = "Message format incorrect";
+			String msg = in.readLine();
+			String[] fields = msg.split(",");
+			if ( fields[0]==KVMessage.PUTTYPE ){
+				this.msgType = fields[0];
+				this.key = fields[1];
+				this.value = fields[2];	
+			}else if( fields[0]==KVMessage.GETTYPE){
+				this.msgType = fields[0];
+				this.key = fields[1];
+			}else if( fields[0]==KVMessage.DELTYPE ){
+				this.msgType = fields[0];
+				this.key = fields[1];
+			}else if(fields[0]==KVMessage.RESPTYPE){
+				this.msgType = fields[0];
+				this.message = fields[1];
+			}else{
+				throw new KVException(this);
 			}
 			
-		} catch (SAXException e) {
-		    this.msgType = KVMessage.RESPTYPE;
-		    this.message = "XML Error: Received unparseable message";
-		    throw new KVException(this);
 		} catch (IOException e) {
-			this.msgType = KVMessage.RESPTYPE;
-			this.message = "Network Error: Could not receive data";
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 			throw new KVException(this);
 		}
+		
+//		DocumentBuilderFactory builderFactory =
+//		        DocumentBuilderFactory.newInstance();
+//		DocumentBuilder builder = null;
+//		try {
+//		    builder = builderFactory.newDocumentBuilder();
+//		} catch (ParserConfigurationException e) {
+//		    e.printStackTrace();  
+//		}
+//		try{
+//			Document dom = builder.parse(input);
+//			if (!isValidMessage(dom)){
+//				this.msgType = KVMessage.RESPTYPE;
+//				this.message = "Message format incorrect";
+//			}
+//			
+//		} catch (SAXException e) {
+//		    this.msgType = KVMessage.RESPTYPE;
+//		    this.message = "XML Error: Received unparseable message";
+//		    throw new KVException(this);
+//		} catch (IOException e) {
+//			this.msgType = KVMessage.RESPTYPE;
+//			this.message = "Network Error: Could not receive data";
+//			throw new KVException(this);
+//		}
 		
 	}
 	
 	private boolean isValidMessage(Document dom){
 		return true;
-		
+//		try{
+//			TransformerFactory tf = TransformerFactory.newInstance();
+//			Transformer transformer = tf.newTransformer();
+//			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+//			StringWriter writer = new StringWriter();
+//			transformer.transform(new DOMSource(dom), new StreamResult(writer));
+//			String output = writer.getBuffer().toString().replaceAll("\n|\r", "");
+//			
+//			if ( output.matches("\\<\\?xml version=\"1.0\" encoding=\"UTF-8\"?><KVMessage type=\"getreq\"><Key>%s</Key></KVMessage>")){
+//				
+//			}
+//			
+//			return true;
+//		}catch (Exception e){
+//			return false;
+//		}
 	}
 	
 	/**
@@ -146,24 +196,85 @@ public class KVMessage {
 	public String toXML() throws KVException {
 	    // TODO: implement me
 		if ( this.msgType==KVMessage.GETTYPE )
-			return String.format(KVMessage.GET_TEMPLATE, this.key);
+			return String.format("%s,%s", KVMessage.GETTYPE, this.key);
+//			return String.format(KVMessage.GET_TEMPLATE, this.key);
 		else if( this.msgType == KVMessage.PUTTYPE )
-			return String.format(KVMessage.PUT_TEMPLATE, this.key, this.value);
+			return String.format("%s,%s,%s", KVMessage.PUTTYPE, this.key, this.value);
+//			return String.format(KVMessage.PUT_TEMPLATE, this.key, this.value);
 		else if( this.msgType == KVMessage.DELTYPE )
-			return String.format(KVMessage.DEL_TEMPLATE, this.key);
+			return String.format("%s,%s", KVMessage.DELTYPE, this.key);
+			//			return String.format(KVMessage.DEL_TEMPLATE, this.key);
+		else if( this.msgType == KVMessage.RESPTYPE)
+			return String.format("%s,%s", KVMessage.RESPTYPE, this.message);
 		else
-			return null;
+			throw new KVException(this);
 			
 	}
 	
 	public void sendMessage(Socket sock) throws KVException {
 	      // TODO: implement me
+		String msg = this.toXML();
+		try {
+			PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
+			out.println(msg);
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	private static final String GET_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><KVMessage type=\"getreq\"><Key>%s</Key></KVMessage>";
 	private static final String PUT_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><KVMessage type=\"putreq\"><Key>%s</Key><Value>%s</Value></KVMessage>";
 	private static final String DEL_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><KVMessage type=\"putreq\"><Key>%s</Key></KVMessage>";
 }
+
+/**
+ * Get Value Request:
+<?xml version="1.0" encoding="UTF-8"?>
+<KVMessage type="getreq">
+<Key>key</Key>
+</KVMessage>
+
+Put Value Request:
+<?xml version="1.0" encoding="UTF-8"?>
+<KVMessage type="putreq">
+<Key>key</Key>
+<Value>value</Value>
+</KVMessage>
+
+Delete Value Request:
+<?xml version="1.0" encoding="UTF-8"?>
+<KVMessage type="delreq">
+<Key>key</Key>
+</KVMessage>
+
+Successful Get Response:
+<?xml version="1.0" encoding="UTF-8"?>
+<KVMessage type="resp">
+<Key>key</Key>
+<Value>value</Value>
+</KVMessage>
+
+Successful Put Response:
+<?xml version="1.0" encoding="UTF-8"?>
+<KVMessage type="resp">
+<Message>Success</Message>
+</KVMessage>
+
+Successful Delete Response:
+<?xml version="1.0" encoding="UTF-8"?>
+<KVMessage type="resp">
+<Message>Success</Message>
+</KVMessage>
+
+Unsuccessful Get/Put/Delete Response:
+<?xml version="1.0" encoding="UTF-8"?>
+<KVMessage type="resp">
+<Message>Error Message</Message>
+</KVMessage>
+ */
+
 /**
  * XML Parsing library for the key-value store
  * 
