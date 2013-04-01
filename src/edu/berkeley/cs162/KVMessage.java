@@ -26,6 +26,9 @@ public class KVMessage {
   public static final String PUTTYPE = "putreq";
   public static final String DELTYPE = "delreq";
   public static final String RESPTYPE = "resp";
+  
+  public static final int MAX_KEY_LENGTH = 256;
+  public static final int MAX_VALUE_LENGTH = 256*1024;
 
 
 
