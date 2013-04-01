@@ -30,45 +30,87 @@ public class KVClientHandler implements NetworkHandler {
 		private KVServer kvServer = null;
 		private Socket client = null;
 		
+		/**
+		 * send the message back to client
+		 * @param msg
+		 */
+		private void sendback( KVMessage msg){
+			//TODO NEED TO IMPLEMENT
+		}
+		
+		private void handlePut(KVMessage msg){
+			//TODO NEED TO IMPLEMENT
+		}
+		
+		private void handleDel(KVMessage msg){
+			//TODO NEED TO IMPLEMENT
+		}
+		
+		private void handleGet(KVMessage msg){
+			String val = null;
+			try {
+				val = this.kvServer.get(msg.getKey());
+			} catch (KVException e) {
+				this.sendback(e.getMsg());
+			}
+			
+			// key doesn't exist
+			if (val!=null){
+				//successful get
+				KVMessage successMsg = null;
+				try {
+					successMsg = new KVMessage(KVMessage.RESPTYPE);
+				} catch (KVException e) {
+					//silence this exception
+				}
+				successMsg.setKey(msg.getKey());
+				successMsg.setValue(val);
+				this.sendback(successMsg);
+			}else{
+				KVMessage errorMsg = null;
+				try {
+					errorMsg = new KVMessage(KVMessage.RESPTYPE);
+				} catch (KVException e) {
+					//silence this exception
+				}
+				this.sendback(errorMsg);
+			}
+			
+		}
+		
 		@Override
 		public void run() {
 		     try {
 		    	 
 				KVMessage msg = new KVMessage(client.getInputStream());
 				
+				//at this point, the msg is a valid KVMessage
 				//get request
 				if ( msg.getMsgType()==KVMessage.GETTYPE){
-					String val = this.kvServer.get(msg.getKey());
-					if (val!=null){
-						//successful get
-						//TODO send back the successful meesage
-					}else{
-						//failed get
-						//TODO send back the failed message
-					}
+					handleGet(msg);
 				
 				//put request	
 				}else if ( msg.getMsgType()==KVMessage.PUTTYPE){
-					boolean success = this.kvServer.put(msg.getKey(), msg.getValue());
-					if (success){
-						//TODO send back the successful message
-					}else{
-						//TODO send back the failed message
-					}
+					handlePut(msg);
 					
 				//del request	
 				}else if (msg.getMsgType()==KVMessage.DELTYPE){
-					this.kvServer.del(msg.getKey());
-					
+					handleDel(msg);
+				}else{
+					//resp request
+					this.sendback(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: server received a response message"));
 				}
 				
-				
 			} catch (KVException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//exception when getting KVMessage from the socket's input stream
+				this.sendback(e.getMsg());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//cannot open the inputstream of the socket
+				try {
+					this.sendback(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data"));
+				} catch (KVException e1) {
+					//ignore this exception
+				}
 			}
 		}
 		

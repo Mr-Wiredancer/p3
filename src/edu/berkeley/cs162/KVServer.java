@@ -69,7 +69,12 @@ public class KVServer implements KeyValueInterface {
 	public String get (String key) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agKVServerGetStarted(key);
-
+		
+		if (key.length()>KVMessage.MAX_KEY_LENGTH){
+			AutoGrader.agKVServerGetFinished(key);
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+		}
+		
 		// TODO: implement me
 		String cacheValue = this.dataCache.get(key);
 		if (cacheValue!=null){
