@@ -21,13 +21,14 @@ import org.xml.sax.SAXException;
  * This is the object that is used to generate messages the XML based messages 
  * for communication between clients and servers. 
  */
+
 public class KVMessage {
-  public static final String GETTYPE = "getreq";
+
+	//TODO this is now a naive implementation for testing purpose without use of XML
+	public static final String GETTYPE = "getreq";
   public static final String PUTTYPE = "putreq";
   public static final String DELTYPE = "delreq";
   public static final String RESPTYPE = "resp";
-
-
 
 	private String msgType = null;
 	private String key = null;
