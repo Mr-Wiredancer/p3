@@ -21,7 +21,7 @@ public class SocketServer {
 	}
 	
 	public void connect() throws IOException {
-    this.server = new ServerSocket(this.port);
+		this.server = new ServerSocket(this.port);
 	}
 	
 	/**
@@ -30,11 +30,11 @@ public class SocketServer {
 	 */
 	public void run() throws IOException {
 	      // TODO: implement me
-    while(true){
-      Socket s = server.accept();
-      System.out.println("accepted a socket");
-      this.handler.handle(s);
-    }
+	    while(true){
+	      Socket s = server.accept();
+	      System.out.println("accepted a socket");
+	      this.handler.handle(s);
+	    }
 	}
 	
 	/** 
@@ -50,21 +50,17 @@ public class SocketServer {
 	 */
 	public void stop() {
 	      // TODO: implement me
-    try{
-      this.server.close();
-    }catch(Exception e){
-    
-    }
+		this.finalize();
 
 	}
 	
 	private void closeSocket() {
 	     // TODO: implement me
-    try{
-      this.server.close();
-    }catch(Exception e){
-    
-    }
+	    try{
+	      this.server.close();
+	    }catch(IOException e){
+	    	//silence this exception
+	    }
 	}
 	
 	protected void finalize(){
