@@ -87,15 +87,16 @@ public class KVMessage {
 	 */
 	public KVMessage(String msgType) throws KVException {
 	    // TODO: implement me
-		this(msgType, null);
+		if ( msgType!=KVMessage.DELTYPE && msgType!=KVMessage.GETTYPE && msgType!=KVMessage.PUTTYPE && msgType!=KVMessage.RESPTYPE ){	
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Message format incorrect"));
+		}
+		this.msgType = msgType;
 	}
 	
 	public KVMessage(String msgType, String message) throws KVException {
         // TODO: implement me
-		if ( msgType!=KVMessage.DELTYPE && msgType!=KVMessage.GETTYPE && msgType!=KVMessage.PUTTYPE && msgType!=KVMessage.RESPTYPE ){	
-			message = "Message format incorrect";
-			msgType = KVMessage.RESPTYPE;
-			throw new KVException(this);
+		if ( msgType!=KVMessage.RESPTYPE ){	
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Message format incorrect"));
 		}
 		this.message = message;
 		this.msgType = msgType;
@@ -132,13 +133,14 @@ public class KVMessage {
 				this.msgType = fields[0];
 				this.message = fields[1];
 			}else{
-				throw new KVException(this);
+				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Message format incorrect"));
 			}
 			
+		//this is case b	
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			throw new KVException(this);
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data"));
 		}
 		
 //		DocumentBuilderFactory builderFactory =
