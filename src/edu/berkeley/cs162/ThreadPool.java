@@ -1,6 +1,7 @@
 package edu.berkeley.cs162;
 
 import java.util.LinkedList;
+import java.util.concurrent.locks.*;
 
 public class ThreadPool {
 	/**
@@ -8,6 +9,10 @@ public class ThreadPool {
 	 */
 	protected Thread threads[] = null;
 	LinkedList<Runnable> jobQueue = new LinkedList<Runnable>();
+	private ReadWriteLock lock = new ReentrantReadWriteLock();
+	
+	private Lock helperLock = new ReentrantLock();
+	public Condition jobQueueNotEmpty = helperLock.newCondition();
 	/**
 	 * Initialize the number of threads required in the threadpool. 
 	 * 
@@ -17,7 +22,6 @@ public class ThreadPool {
 	{      
 	    // TODO: implement me
 		threads = new Thread[size];
-		
 	}
 
 	/**
@@ -29,6 +33,10 @@ public class ThreadPool {
 	public void addToQueue(Runnable r) throws InterruptedException
 	{
 	      // TODO: implement me
+		lock.writeLock().lock();	
+		jobQueue.add(r);
+		lock.writeLock().unlock();
+		this.jobQueueNotEmpty.notifyAll();
 	}
 	
 	/** 
@@ -73,10 +81,16 @@ class WorkerThread extends Thread {
 		}
 		while (true){
 			if (r !=null ){
-				
+				try {
+					o.jobQueueNotEmpty.await();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}else{
 				try {
 					r = o.getJob();
+					r.run();
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

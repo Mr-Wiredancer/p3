@@ -51,7 +51,7 @@ public class KVStore implements KeyValueInterface {
 		store = new Hashtable<String, String>();
 	}
 	
-	public boolean put(String key, String value) throws KVException {
+	public synchronized boolean put(String key, String value) throws KVException {
 		AutoGrader.agStorePutStarted(key, value);
 		
 		try {
@@ -63,7 +63,7 @@ public class KVStore implements KeyValueInterface {
 		}
 	}
 	
-	public String get(String key) throws KVException {
+	public synchronized String get(String key) throws KVException {
 		AutoGrader.agStoreGetStarted(key);
 		
 		try {
@@ -79,7 +79,7 @@ public class KVStore implements KeyValueInterface {
 		}
 	}
 	
-	public void del(String key) throws KVException {
+	public synchronized void del(String key) throws KVException {
 		AutoGrader.agStoreDelStarted(key);
 
 		try {
@@ -103,16 +103,22 @@ public class KVStore implements KeyValueInterface {
 		AutoGrader.agStoreDelay();
 	}
 	
-    public String toXML() throws KVException {
+    public synchronized String toXML() throws KVException {
         // TODO: implement me
-        return null;
+    	String result = "";
+    	while ( this.store.keys().hasMoreElements()){
+    		String key = this.store.keys().nextElement();
+    		String val = this.store.get(key);
+    		result = result+key+","+val+";\n";
+    	}
+        return result;
     }        
 
-    public void dumpToFile(String fileName) throws KVException {
+    public synchronized void dumpToFile(String fileName) throws KVException {
         // TODO: implement me
     }
 
-    public void restoreFromFile(String fileName) throws KVException{
+    public synchronized void restoreFromFile(String fileName) throws KVException{
         // TODO: implement me
     }
 }

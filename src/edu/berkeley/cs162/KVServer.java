@@ -71,10 +71,21 @@ public class KVServer implements KeyValueInterface {
 		AutoGrader.agKVServerGetStarted(key);
 
 		// TODO: implement me
-
-		// Must be called before returning
-		AutoGrader.agKVServerGetFinished(key);
-		return null;
+		String cacheValue = this.dataCache.get(key);
+		if (cacheValue!=null){
+			AutoGrader.agKVServerGetFinished(key);
+			return cacheValue;
+		}
+		//key is not in cache
+		String storeResult = this.dataStore.get(key);
+		if (storeResult!=null){
+			this.dataCache.update(key, storeResult);
+			AutoGrader.agKVServerGetFinished(key);
+			return storeResult;
+		}else{
+			AutoGrader.agKVServerGetFinished(key);
+			throw new KVException(new KVMessage("resp", "key is not in store"));
+		}
 	}
 	
 	public void del (String key) throws KVException {
@@ -82,7 +93,9 @@ public class KVServer implements KeyValueInterface {
 		AutoGrader.agKVServerDelStarted(key);
 
 		// TODO: implement me
-
+		this.dataCache.del(key);
+		this.dataStore.del(key);
+		
 		// Must be called before returning
 		AutoGrader.agKVServerDelFinished(key);
 	}

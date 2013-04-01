@@ -32,7 +32,44 @@ public class KVClientHandler implements NetworkHandler {
 		
 		@Override
 		public void run() {
-		     // TODO: Implement Me!
+		     try {
+		    	 
+				KVMessage msg = new KVMessage(client.getInputStream());
+				
+				//get request
+				if ( msg.getMsgType()==KVMessage.GETTYPE){
+					String val = this.kvServer.get(msg.getKey());
+					if (val!=null){
+						//successful get
+						//TODO send back the successful meesage
+					}else{
+						//failed get
+						//TODO send back the failed message
+					}
+				
+				//put request	
+				}else if ( msg.getMsgType()==KVMessage.PUTTYPE){
+					boolean success = this.kvServer.put(msg.getKey(), msg.getValue());
+					if (success){
+						//TODO send back the successful message
+					}else{
+						//TODO send back the failed message
+					}
+					
+				//del request	
+				}else if (msg.getMsgType()==KVMessage.DELTYPE){
+					this.kvServer.del(msg.getKey());
+					
+				}
+				
+				
+			} catch (KVException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		public ClientHandler(KVServer kvServer, Socket client) {

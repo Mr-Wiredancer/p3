@@ -30,6 +30,9 @@
  */
 package edu.berkeley.cs162;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 
@@ -42,6 +45,7 @@ public class KVCache implements KeyValueInterface {
 	private int numSets = 100;
 	private int maxElemsPerSet = 10;
 		
+	private CacheSet[] sets;
 	/**
 	 * Creates a new LRU cache.
 	 * @param cacheSize	the maximum number of entries that will be kept in this cache.
@@ -64,10 +68,15 @@ public class KVCache implements KeyValueInterface {
 		AutoGrader.agCacheGetDelay();
         
 		// TODO: Implement Me!
-		
+		int setId = this.getSetId(key);
+		String result = this.sets[setId].get(key);
 		// Must be called before returning
 		AutoGrader.agCacheGetFinished(key);
-		return null;
+		return result;
+	}
+	
+	public void update(String key, String value){
+		this.sets[getSetId(key)].update(key, value);
 	}
 
 	/**
@@ -128,5 +137,81 @@ public class KVCache implements KeyValueInterface {
     public String toXML() {
         // TODO: Implement Me!
         return null;
+    }
+    
+    private class CacheEntry{
+    	private String value;
+    	private boolean dirty = false;
+    	private boolean missed = false;
+    	private String key;
+    	
+    	public CacheEntry(String key, String val){
+    		this.value = val;
+    		this.key = key;
+    	}
+    	
+    	public void miss(){
+    		this.missed = true;
+    	}
+    	
+    	public boolean isDirty(){
+    		return this.dirty;
+    	}
+    	
+    	public boolean isLastChance(){
+    		return this.missed;
+    	}
+    
+    	public String getKey(){
+    		return this.key;
+    	}
+    	
+    	public String getValue(){
+    		return this.value;
+    	}
+    }
+    
+    private class CacheSet{
+    	private WriteLock lock = new ReentrantReadWriteLock().writeLock();
+    	private final int MAX_NUM_ELEMENT;
+    	private LinkedList<CacheEntry> set = new LinkedList<CacheEntry>();
+    	
+    	public CacheSet(int maxElementPerSet){
+    		this.MAX_NUM_ELEMENT = maxElementPerSet;
+    	}
+    	
+    	/**
+    	 * Linear search of the requested key.
+    	 * @param key
+    	 * @return value of the key; null if the key doesn't exist
+    	 */
+    	public synchronized String get(String key){
+    		for ( CacheEntry e : this.set){
+    			if ( e.getKey() == key ){
+    				return e.getValue();
+    			}
+    		}
+    		return null;
+    	}
+    	
+    	/**
+    	 * Called when the requested key is not in the cache set. <key, value> is retreived from KVStore.
+    	 * @param key 
+    	 * @param value
+    	 */
+    	public synchronized void update(String key, String value){
+    		if (this.set.size() < this.MAX_NUM_ELEMENT-1){
+    			this.set.addFirst(new CacheEntry(key, value));
+    			return;
+    		}
+
+    		CacheEntry headEntry = this.set.removeFirst();
+    		if ( headEntry.isLastChance() ){
+    			this.set.addFirst(new CacheEntry(key, value));
+    		}else{
+    			headEntry.miss();
+    			this.set.add(headEntry);
+    		}
+    	}
     }
 }
