@@ -1,1 +1,5 @@
-init README
+1. Keep master branch stable. Dont merge it to any other branch unless that branch is stable
+
+2. kvmessage and testcases branches are can be worked on independently. 
+
+3. to test based on other's work. merge your branch to their branch instead of merging to master branch
