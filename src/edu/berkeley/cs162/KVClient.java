@@ -169,16 +169,25 @@ public class KVClient implements KeyValueInterface {
 	// what to do when delete fails?
 	public void del(String key) throws KVException {
 	    // TODO: Implement Me!
+		if (key.length()>KVMessage.MAX_KEY_LENGTH)
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Oversized key"));	
+		
 		Socket sock = this.connectHost();
 		
 		OutputStream out = null;
 		InputStream in = null;
 		try {
 			out = sock.getOutputStream();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not send data"));
+		}
+		
+		try {
 			in = sock.getInputStream();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data"));
 		}
 		
 		KVMessage msg = new KVMessage(KVMessage.DELTYPE);
@@ -190,7 +199,7 @@ public class KVClient implements KeyValueInterface {
 			out.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
 		
 		KVMessage response = new KVMessage(in);//we dont look at the response for now
@@ -199,8 +208,9 @@ public class KVClient implements KeyValueInterface {
 			in.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
+		
 		this.closeHost(sock);
 	}	
 }
