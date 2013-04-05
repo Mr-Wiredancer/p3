@@ -23,6 +23,8 @@ public class Test {
 		ClientThread cThread = new ClientThread();
 		cThread.start();
 		
+		ClientThread cThread2 = new ClientThread();
+		cThread2.start();
 	}
 	
 
@@ -55,6 +57,7 @@ public class Test {
 				debug("Starting Server");
 				server.run();
 			}catch (Exception e){
+				e.printStackTrace();
 				debug("server shut down because of errors");
 			}
 		}
@@ -69,7 +72,7 @@ public class Test {
 		
 		public ClientThread(){
 			super();
-			this.setName("ClientThread"+Test.clientThreadCounter);
+			this.setName("ClientThread"+Test.clientThreadCounter++);
 		}
 		/**
 		 * 
@@ -83,7 +86,6 @@ public class Test {
 				debug("putting (3, 7)");
 				boolean status = kc.put(three, seven);
 				debug("status: " + status);
-
 			}catch(Exception e){
 				e.printStackTrace();
 			}
