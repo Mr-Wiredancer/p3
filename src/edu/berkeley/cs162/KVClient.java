@@ -149,6 +149,8 @@ public class KVClient implements KeyValueInterface {
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
+		debug("the get request is: "+msg.toXML());
+
 		try {
 			out.close();
 		} catch (IOException e) {
@@ -203,6 +205,8 @@ public class KVClient implements KeyValueInterface {
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
+		debug("the del request is: "+msg.toXML());
+
 		try {
 			out.close();
 		} catch (IOException e) {
