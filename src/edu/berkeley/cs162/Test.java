@@ -23,11 +23,6 @@ public class Test {
 		ClientThread cThread = new ClientThread();
 		cThread.start();
 		
-		String s = new Scanner(System.in).next();
-		if (s=="q"){
-			sThread.interrupt();
-			cThread.interrupt();
-		}
 	}
 	
 
