@@ -100,7 +100,7 @@ public class KVClient implements KeyValueInterface {
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
 		
-		KVMessage response = new KVMessage(in);
+		//KVMessage response = new KVMessage(in);
 		
 		try {
 			in.close();
@@ -112,10 +112,11 @@ public class KVClient implements KeyValueInterface {
 		this.closeHost(sock);
 		
 		//assume we return true if success and false otherwise
-		if ( response.getMessage()=="Success")
-			return true;
-		else
+//		if ( response.getMessage()=="Success")
+//			return true;
+//		else
 			return false;
+	
 		
 	}
 

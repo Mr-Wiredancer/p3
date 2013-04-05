@@ -30,12 +30,17 @@ public class KVClientHandler implements NetworkHandler {
 		private KVServer kvServer = null;
 		private Socket client = null;
 		
+		public void debug(String s){
+			System.out.println(Thread.currentThread().getName()+": "+s);
+		}
+		
 		@Override
 		public void run() {
 		     try {
 		    	 
 				KVMessage msg = new KVMessage(client.getInputStream());
 				
+				debug(msg.toXML());
 				//get request
 				if ( msg.getMsgType()==KVMessage.GETTYPE){
 					String val = this.kvServer.get(msg.getKey());

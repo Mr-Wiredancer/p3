@@ -24,6 +24,10 @@ public class SocketServer {
 		this.server = new ServerSocket(this.port);
 	}
 	
+
+	public void debug(String s){
+		System.out.println(Thread.currentThread().getName()+": "+s);
+	}
 	/**
 	 * Accept requests and service them asynchronously. 
 	 * @throws IOException if there is a network error (for instance if the socket is inadvertently closed) 
@@ -32,7 +36,7 @@ public class SocketServer {
 	      // TODO: implement me
 	    while(true){
 	      Socket s = server.accept();
-	      System.out.println("accepted a socket");
+	      debug("accepted a socket");
 	      this.handler.handle(s);
 	    }
 	}
