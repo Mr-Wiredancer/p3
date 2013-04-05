@@ -118,6 +118,7 @@ public class KVMessage {
 		in = new BufferedReader(new InputStreamReader(input));
 		try {
 			String msg = in.readLine();
+			System.out.println(Thread.currentThread().getName()+": "+msg);
 			String[] fields = msg.split(",");
 			if ( fields[0]==KVMessage.PUTTYPE ){
 				this.msgType = fields[0];
