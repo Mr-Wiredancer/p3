@@ -3,6 +3,7 @@ package edu.berkeley.cs162;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.Scanner;
 
 public class Test {
 	public static int clientThreadCounter = 0;
@@ -21,6 +22,12 @@ public class Test {
 		
 		ClientThread cThread = new ClientThread();
 		cThread.start();
+		
+		String s = new Scanner(System.in).next();
+		if (s=="q"){
+			sThread.interrupt();
+			cThread.interrupt();
+		}
 	}
 	
 
@@ -53,7 +60,7 @@ public class Test {
 				debug("Starting Server");
 				server.run();
 			}catch (Exception e){
-				debug("unable to start server");
+				debug("server shut down because of errors");
 			}
 		}
 	}
