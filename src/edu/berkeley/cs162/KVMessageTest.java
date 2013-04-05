@@ -1,0 +1,14 @@
+package edu.berkeley.cs162;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+public class KVMessageTest {
+
+	@Test
+	public void test() {
+		fail("Not yet implemented");
+	}
+
+}

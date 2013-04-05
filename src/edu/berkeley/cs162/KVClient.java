@@ -92,6 +92,7 @@ public class KVClient implements KeyValueInterface {
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
+		debug("the put request is: "+msg.toXML());
 		try {
 			out.close();
 		} catch (IOException e) {
@@ -220,6 +221,10 @@ public class KVClient implements KeyValueInterface {
 		
 		this.closeHost(sock);
 	}	
+	
+	public void debug(String s){
+		System.out.println(Thread.currentThread().getName()+": "+s);
+	}
 }
 /**
  * Client component for generating load for the KeyValue store. 
