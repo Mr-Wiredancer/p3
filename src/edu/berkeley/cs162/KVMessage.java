@@ -121,18 +121,20 @@ public class KVMessage {
 		in = new BufferedReader(new InputStreamReader(input));
 		try {
 			String msg = in.readLine();
+			System.out.println(Thread.currentThread().getName()+": "+msg);
 			String[] fields = msg.split(",");
-			if ( fields[0]==KVMessage.PUTTYPE ){
+			System.out.println(Thread.currentThread().getName()+": "+fields[0]+";"+fields[1]);
+			if ( fields[0].equals(KVMessage.PUTTYPE) ){
 				this.msgType = fields[0];
 				this.key = fields[1];
 				this.value = fields[2];	
-			}else if( fields[0]==KVMessage.GETTYPE){
+			}else if( fields[0].equals(KVMessage.GETTYPE)){
 				this.msgType = fields[0];
 				this.key = fields[1];
-			}else if( fields[0]==KVMessage.DELTYPE ){
+			}else if( fields[0].equals(KVMessage.DELTYPE) ){
 				this.msgType = fields[0];
 				this.key = fields[1];
-			}else if(fields[0]==KVMessage.RESPTYPE){
+			}else if(fields[0].equals(KVMessage.RESPTYPE)){
 				this.msgType = fields[0];
 				this.message = fields[1];
 			}else{
@@ -200,16 +202,16 @@ public class KVMessage {
 	 */
 	public String toXML() throws KVException {
 	    // TODO: implement me
-		if ( this.msgType==KVMessage.GETTYPE )
+		if ( this.msgType.equals(KVMessage.GETTYPE) )
 			return String.format("%s,%s", KVMessage.GETTYPE, this.key);
 //			return String.format(KVMessage.GET_TEMPLATE, this.key);
-		else if( this.msgType == KVMessage.PUTTYPE )
+		else if( this.msgType .equals( KVMessage.PUTTYPE) )
 			return String.format("%s,%s,%s", KVMessage.PUTTYPE, this.key, this.value);
 //			return String.format(KVMessage.PUT_TEMPLATE, this.key, this.value);
-		else if( this.msgType == KVMessage.DELTYPE )
+		else if( this.msgType .equals( KVMessage.DELTYPE ))
 			return String.format("%s,%s", KVMessage.DELTYPE, this.key);
 			//			return String.format(KVMessage.DEL_TEMPLATE, this.key);
-		else if( this.msgType == KVMessage.RESPTYPE)
+		else if( this.msgType .equals( KVMessage.RESPTYPE))
 			return String.format("%s,%s", KVMessage.RESPTYPE, this.message);
 		else
 			throw new KVException(this);

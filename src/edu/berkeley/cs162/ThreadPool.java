@@ -7,11 +7,11 @@ public class ThreadPool {
 	/**
 	 * Set of threads in the threadpool
 	 */
-	protected Thread threads[] = null;
+	protected WorkerThread threads[] = null;
 	LinkedList<Runnable> jobQueue = new LinkedList<Runnable>();
 	private ReadWriteLock lock = new ReentrantReadWriteLock();
 	
-	private Lock helperLock = new ReentrantLock();
+	public Lock helperLock = new ReentrantLock();
 	public Condition jobQueueNotEmpty = helperLock.newCondition();
 	/**
 	 * Initialize the number of threads required in the threadpool. 
@@ -21,7 +21,18 @@ public class ThreadPool {
 	public ThreadPool(int size)
 	{      
 	    // TODO: implement me
-		threads = new Thread[size];
+		threads = new WorkerThread[size];
+		initializeThreads();
+	}
+	
+	private void initializeThreads(){
+		for (int i = 0; i < threads.length; i++){
+			threads[i] = new WorkerThread(this);
+		}
+		System.out.println("there are "+threads.length+" threads");
+		for (WorkerThread w : this.threads){
+			w.start();
+		}
 	}
 
 	/**
@@ -36,7 +47,10 @@ public class ThreadPool {
 		lock.writeLock().lock();	
 		jobQueue.add(r);
 		lock.writeLock().unlock();
-		this.jobQueueNotEmpty.notifyAll();
+		
+		this.helperLock.lock();
+		this.jobQueueNotEmpty.signal();
+		this.helperLock.unlock();
 	}
 	
 	/** 
@@ -45,8 +59,15 @@ public class ThreadPool {
 	 * @throws InterruptedException 
 	 */
 	public synchronized Runnable getJob() throws InterruptedException {
-	      // TODO: implement me
-	    return null;
+	    lock.writeLock().lock();
+	    Runnable r = null;
+	    try{
+	    r = jobQueue.remove();
+	    }catch(Exception e){
+	    	
+	    }
+	    lock.writeLock().unlock();
+	    return r;
 	}
 }
 
@@ -59,18 +80,25 @@ class WorkerThread extends Thread {
 	 * 
 	 * @param o the thread pool 
 	 */
+	private static int workerThreadCounter = 0;
+	
 	private ThreadPool o;
 	
 	WorkerThread(ThreadPool o)
 	{
 		this.o = o;
+		this.setName("WorkerThread"+WorkerThread.workerThreadCounter++);
 	}
 
+	public void debug(String s){
+		System.out.println(Thread.currentThread().getName()+": "+s);
+	}
 	/**
 	 * Scan for and execute tasks.
 	 */
 	public void run()
 	{
+		debug("running");
 	      // TODO: implement me
 		Runnable r = null;
 		try {
@@ -81,20 +109,23 @@ class WorkerThread extends Thread {
 		}
 		while (true){
 			if (r !=null ){
-				try {
-					o.jobQueueNotEmpty.await();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				debug("get a job");
+				r.run();
 			}else{
 				try {
-					r = o.getJob();
-					r.run();
+					o.helperLock.lock();
+					o.jobQueueNotEmpty.await();
+					o.helperLock.unlock();
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+			}
+			try {
+				r = o.getJob();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}

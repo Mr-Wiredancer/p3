@@ -32,8 +32,12 @@ public class KVClient implements KeyValueInterface {
 	    try{
 	    	socket = new Socket(this.server, port);
 	    	return socket;
+	    	
+	    //could not connect to the server/port tuple	
 	    }catch (UnknownHostException e){
 	    	throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not connect"));
+	    
+	    //could not create the socket
 	    }catch (IOException e){
 	    	throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not create socket"));
 		}
@@ -54,6 +58,8 @@ public class KVClient implements KeyValueInterface {
 	 */
 	public boolean put(String key, String value) throws KVException {
 	    // TODO: Implement Me!
+		
+		//check for length of key and value
 		if (key.length()>KVMessage.MAX_KEY_LENGTH)
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
 		
@@ -63,6 +69,7 @@ public class KVClient implements KeyValueInterface {
 				
 		Socket sock = this.connectHost();
 		
+		//try to open inputstream and outputstream of the socket
 		OutputStream out = null;
 		InputStream in = null;
 		try {
@@ -85,6 +92,7 @@ public class KVClient implements KeyValueInterface {
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
+		debug("the put request is: "+msg.toXML());
 		try {
 			out.close();
 		} catch (IOException e) {
@@ -108,6 +116,7 @@ public class KVClient implements KeyValueInterface {
 			return true;
 		else
 			return false;
+	
 		
 	}
 
@@ -141,6 +150,8 @@ public class KVClient implements KeyValueInterface {
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
+		debug("the get request is: "+msg.toXML());
+
 		try {
 			out.close();
 		} catch (IOException e) {
@@ -195,6 +206,8 @@ public class KVClient implements KeyValueInterface {
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
+		debug("the del request is: "+msg.toXML());
+
 		try {
 			out.close();
 		} catch (IOException e) {
@@ -213,6 +226,10 @@ public class KVClient implements KeyValueInterface {
 		
 		this.closeHost(sock);
 	}	
+	
+	public void debug(String s){
+		System.out.println(Thread.currentThread().getName()+": "+s);
+	}
 }
 /**
  * Client component for generating load for the KeyValue store. 
