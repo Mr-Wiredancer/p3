@@ -8,14 +8,10 @@ import java.net.Socket;
  * It uses a threadpool to ensure that none of it's methods are blocking.
  *
  */
-public class KVClientHandler implements NetworkHandler {
+public class KVClientHandler implements NetworkHandler, Debuggable {
 	private KVServer kv_Server = null;
 	private ThreadPool threadpool = null;
-	
-	public void debug(String s){
-		System.out.println(Thread.currentThread().getName()+": "+s);
-	}
-	
+		
 	public KVClientHandler(KVServer kvServer) {
 		initialize(kvServer, 1);
 	}
@@ -92,7 +88,7 @@ public class KVClientHandler implements NetworkHandler {
 	 */
 	@Override
 	public void handle(Socket client) throws IOException {
-		this.debug("creating a new job");
+		DEBUG.debug("creating a new job");
 		Runnable r = new ClientHandler(kv_Server, client);
 		try {
 			threadpool.addToQueue(r);

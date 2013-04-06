@@ -38,7 +38,7 @@ package edu.berkeley.cs162;
  * different part of the key namespace.
  *
  */
-public class KVServer implements KeyValueInterface {
+public class KVServer implements KeyValueInterface,Debuggable {
 	private KVStore dataStore = null;
 	private KVCache dataCache = null;
 	
@@ -58,9 +58,9 @@ public class KVServer implements KeyValueInterface {
 	public boolean put(String key, String value) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agKVServerPutStarted(key, value);
-
+	
 		// TODO: implement me
-
+		DEBUG.debug(String.format("requestd to put <%s, %s> in the store", key, value));
 		// Must be called before returning
 		AutoGrader.agKVServerPutFinished(key, value);
 		return false;

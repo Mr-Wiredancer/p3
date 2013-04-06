@@ -20,6 +20,7 @@ public class Test {
 			e.printStackTrace();
 		}
 		
+		
 		ClientThread cThread = new ClientThread();
 		cThread.start();
 		
@@ -33,13 +34,7 @@ public class Test {
 	 * @author JL
 	 *
 	 */
-	private class TestThread extends Thread{
-		public void debug(String s){
-			System.out.println(Thread.currentThread().getName()+": "+s);
-		}
-	}
-	
-	private class ServerThread extends TestThread{
+	private class ServerThread extends Thread implements Debuggable{
 	
 		public ServerThread(){
 			super();
@@ -47,28 +42,28 @@ public class Test {
 		}
 		
 		public void run(){
-			debug("Binding Server:");
+			DEBUG.debug("Binding Server:");
 			KVServer key_server = new KVServer(100, 10);
 			SocketServer server = new SocketServer("localhost", 8080);
 			NetworkHandler handler = new KVClientHandler(key_server);
 			server.addHandler(handler);
 			try{
 				server.connect();
-				debug("Starting Server");
+				DEBUG.debug("Starting Server");
 				server.run();
 			}catch (Exception e){
+				DEBUG.debug("server shut down because of errors");
 				e.printStackTrace();
-				debug("server shut down because of errors");
 			}
 		}
 	}
 	
 	/**
-	 * The server that runs KVServer code
+	 * The thread that runs KVclient code
 	 * @author JL
 	 *
 	 */
-	private class ClientThread extends TestThread{
+	private class ClientThread extends Thread implements Debuggable{
 		
 		public ClientThread(){
 			super();
@@ -78,15 +73,16 @@ public class Test {
 		 * 
 		 */
 		public void run(){
-			debug("starting client");
+			DEBUG.debug("starting client");
 			KVClient kc = new KVClient("localhost", 8080);
 			try{
 				String three = "3";
 				String seven = "7";
-				debug("putting (3, 7)");
+				DEBUG.debug("putting (3, 7)");
 				boolean status = kc.put(three, seven);
-				debug("status: " + status);
+				DEBUG.debug("status: " + status);
 			}catch(Exception e){
+				DEBUG.debug("error");
 				e.printStackTrace();
 			}
 		}
