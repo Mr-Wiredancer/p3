@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.Scanner;
 
+//fuck gqc
 public class Test {
 	public static int clientThreadCounter = 0;
 	
