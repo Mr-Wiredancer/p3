@@ -75,19 +75,21 @@ public class KVServer implements KeyValueInterface,Debuggable {
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
 		}
 		
-		// TODO: implement me
+		//try to get the value in cache
 		String cacheValue = this.dataCache.get(key);
 		if (cacheValue!=null){
 			AutoGrader.agKVServerGetFinished(key);
 			return cacheValue;
 		}
-		//key is not in cache
+		
+		//key is not in cache, try to get the value in the store
 		String storeResult = this.dataStore.get(key);
 		if (storeResult!=null){
 			this.dataCache.update(key, storeResult);
 			AutoGrader.agKVServerGetFinished(key);
 			return storeResult;
 		}else{
+			//key is not even in the store
 			AutoGrader.agKVServerGetFinished(key);
 			throw new KVException(new KVMessage("resp", "key is not in store"));
 		}
