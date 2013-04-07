@@ -5,6 +5,11 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Test functionalities of kvstore. You'd better change the delay time in AutoGrader.java before running the tests.
+ * @author amos0528
+ *
+ */
 public class KVStoreTest {
 	public static KVStore store = new KVStore();
 

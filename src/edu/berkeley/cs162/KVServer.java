@@ -59,40 +59,59 @@ public class KVServer implements KeyValueInterface,Debuggable {
 		// Must be called before anything else
 		AutoGrader.agKVServerPutStarted(key, value);
 	
-		// TODO: implement me
-		DEBUG.debug(String.format("requestd to put <%s, %s> in the store", key, value));
-		// Must be called before returning
-		AutoGrader.agKVServerPutFinished(key, value);
-		return false;
+		try{
+			DEBUG.debug(String.format("requestd to put <%s, %s> in the store", key, value));
+			
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			
+			if (value.length()>KVMessage.MAX_VALUE_LENGTH){
+				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
+			}
+			
+			boolean replacementNeeded = this.dataCache.put(key, value);
+			
+			boolean result = this.dataStore.put(key, value);
+			
+			if (replacementNeeded){
+				this.dataCache.replace(key, value);
+			}
+			return result;
+		
+		}finally{
+			AutoGrader.agKVServerPutFinished(key, value);
+		}
 	}
 	
 	public String get (String key) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agKVServerGetStarted(key);
 		
-		if (key.length()>KVMessage.MAX_KEY_LENGTH){
+		try{
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			
+			//try to get the value in cache
+			String cacheValue = this.dataCache.get(key);
+			if (cacheValue!=null){
+				return cacheValue; //directly return the value if the value is in cache
+			}
+			
+			//key is not in cache, try to get the value in the store
+			String storeResult = this.dataStore.get(key);
+			if (storeResult!=null){
+				this.dataCache.replace(key, storeResult);
+				return storeResult;
+			}else{
+				//key is not even in the store
+				throw new KVException(new KVMessage("resp", "key is not in store"));
+			}
+		}finally{
 			AutoGrader.agKVServerGetFinished(key);
-			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
 		}
 		
-		//try to get the value in cache
-		String cacheValue = this.dataCache.get(key);
-		if (cacheValue!=null){
-			AutoGrader.agKVServerGetFinished(key);
-			return cacheValue;
-		}
-		
-		//key is not in cache, try to get the value in the store
-		String storeResult = this.dataStore.get(key);
-		if (storeResult!=null){
-			this.dataCache.update(key, storeResult);
-			AutoGrader.agKVServerGetFinished(key);
-			return storeResult;
-		}else{
-			//key is not even in the store
-			AutoGrader.agKVServerGetFinished(key);
-			throw new KVException(new KVMessage("resp", "key is not in store"));
-		}
 	}
 	
 	public void del (String key) throws KVException {
@@ -101,7 +120,7 @@ public class KVServer implements KeyValueInterface,Debuggable {
 
 		// TODO: implement me
 		this.dataCache.del(key);
-		this.dataStore.del(key);
+		this.dataStore.del(key); // 
 		
 		// Must be called before returning
 		AutoGrader.agKVServerDelFinished(key);

@@ -66,9 +66,17 @@ public class KVStore implements KeyValueInterface {
 		
 		try {
 			putDelay();
-			boolean result = store.get(key)!=null; //see if key is already existent
-			store.put(key, value);
-			return result;
+			if (store.get(key)==null){
+				store.put(key, value);
+				return false;
+			}else{
+				if (store.get(key).equals(value))
+					return false;
+				
+				//overwritting happens
+				store.put(key, value);
+				return true;
+			}
 		} finally {
 			AutoGrader.agStorePutFinished(key, value);
 		}
