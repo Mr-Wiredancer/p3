@@ -50,6 +50,8 @@ public class SocketServer implements Debuggable{
 	 */
 	public void stop() {
 	      // TODO: implement me
+		
+		//TODO: more cleanup. Maybe shutdown the threads in the thread pool, blablah	
 		this.finalize();
 
 	}
