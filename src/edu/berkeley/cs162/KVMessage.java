@@ -26,13 +26,6 @@ import org.xml.sax.SAXException;
  * This is the object that is used to generate messages the XML based messages 
  * for communication between clients and servers. 
  */
-
-/**
- * The format now is only a "," separated string containing information of msgtype, key, value, message, if not null. This is only for the use of testing server side before implementation of XML format
- * Plz implement the XML version according to the spec.
- * by LI
- *
- */
 public class KVMessage {
 
 	//TODO this is now a naive implementation for testing purpose without use of XML
@@ -109,14 +102,11 @@ public class KVMessage {
 	}
 	
 	public KVMessage(String msgType, String message) throws KVException {
-        // TODO: implement me
 		if ( msgType!=KVMessage.RESPTYPE ){	
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Message format incorrect"));
 		}
 		this.message = message;
-		this.msgType = msgType;
-		
-	
+		this.msgType = msgType;	
 	}
 	
 	 /***
