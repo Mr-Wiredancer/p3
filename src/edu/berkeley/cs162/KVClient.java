@@ -62,7 +62,6 @@ public class KVClient implements KeyValueInterface {
 		//check for length of key and value
 		if (key.length()>KVMessage.MAX_KEY_LENGTH)
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-		
 		if (value.length()>KVMessage.MAX_VALUE_LENGTH){
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
 		}

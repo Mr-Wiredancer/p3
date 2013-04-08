@@ -30,11 +30,19 @@
  */
 package edu.berkeley.cs162;
 
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.*;
 
 
 /**
@@ -42,7 +50,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
  * Each set has a maximum number of elements (MAX_ELEMS_PER_SET).
  * If a set is full and another entry is added, an entry is dropped based on the eviction policy.
  */
-public class KVCache implements KeyValueInterface {	
+public class KVCache implements KeyValueInterface, Debuggable {	
 	private int numSets = 100;
 	private int maxElemsPerSet = 10;
 		
@@ -73,6 +81,7 @@ public class KVCache implements KeyValueInterface {
 		AutoGrader.agCacheGetStarted(key);
 		AutoGrader.agCacheGetDelay();
         
+		DEBUG.debug("Cache receives a get request with key "+key);
 		int setId = this.getSetId(key);
 		String result = this.sets[setId].get(key);
 		// Must be called before returning
@@ -111,6 +120,7 @@ public class KVCache implements KeyValueInterface {
 		AutoGrader.agCachePutStarted(key, value);
 		AutoGrader.agCachePutDelay();
 
+		DEBUG.debug("Cache receives a put request with key "+key+" and value "+value);
 		try{
 			return this.sets[this.getSetId(key)].put(key, value);
 		}finally{
@@ -128,6 +138,7 @@ public class KVCache implements KeyValueInterface {
 		AutoGrader.agCacheGetStarted(key);
 		AutoGrader.agCacheDelDelay();
 		
+		DEBUG.debug("Cache receives a del request with key "+key);
 		this.sets[this.getSetId(key)].del(key);
 		
 		// Must be called before returning
@@ -154,20 +165,92 @@ public class KVCache implements KeyValueInterface {
 	
     public String toXML() {
         // TODO: Implement Me!
-    	String result = "";
-    	for (int setId = 0; setId<this.numSets; setId++){
-    		CacheSet set = this.sets[setId];
-    		
-    		for (int entryIndex = 0; entryIndex < set.entries.size(); entryIndex++){
-    			CacheEntry e = set.entries.get(entryIndex);
-    			result+=String.format("%s,%s,%s,%s,%s\n", setId, e.isReferred(), true, e.getKey(), e.getValue());
-    		}
-    		
-    		for (int i = set.entries.size(); i < this.maxElemsPerSet; i++){
-    			result+=String.format("%s,%s,%s,%s,%s\n", setId, false, false, "", "");
-    		}
-    	}
-    	return result;
+    	DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = null;
+		try {
+			docBuilder = docFactory.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			//this should not happen
+			e.printStackTrace();
+		}
+ 
+		// root element
+		Document doc = docBuilder.newDocument();
+		Element rootElement = doc.createElement("KVCache");
+		doc.setXmlStandalone(true);
+		doc.appendChild(rootElement);
+		
+		for (int i = 0; i<this.numSets; i++){
+			//add a set element
+			CacheSet set = this.sets[i];
+			
+			Element setElement = doc.createElement("Set");
+			setElement.setAttribute("Id", ""+i);
+			
+			//add the existent entries in a set
+			for (int entryIndex = 0; entryIndex < set.entries.size(); entryIndex++){
+				CacheEntry e = set.entries.get(entryIndex);
+				
+				Element entryElement = doc.createElement("CacheEntry");
+				boolean isReferenced = e.isReferred();
+				entryElement.setAttribute("isReferenced", ""+isReferenced);
+				entryElement.setAttribute("isValid", ""+true);
+				
+				Element keyElement = doc.createElement("Key");
+				keyElement.appendChild(doc.createTextNode(e.getKey()));
+				
+				Element valueElement = doc.createElement("Value");
+				valueElement.appendChild(doc.createTextNode(e.getValue()));
+				
+				entryElement.appendChild(keyElement);
+				entryElement.appendChild(valueElement);
+				
+				setElement.appendChild(entryElement);
+			}
+			
+			for (int j = set.entries.size(); j < this.maxElemsPerSet; j++){
+				Element entryElement = doc.createElement("CacheEntry");
+				entryElement.setAttribute("isReferenced", ""+false);
+				entryElement.setAttribute("isValid", ""+false);
+				
+				Element keyElement = doc.createElement("Key");
+				Element valueElement = doc.createElement("Value");
+
+				entryElement.appendChild(keyElement);
+				entryElement.appendChild(valueElement);
+				
+				setElement.appendChild(entryElement);
+			}
+			
+			rootElement.appendChild(setElement);
+		}
+		
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer = null;
+		try {
+			transformer = transformerFactory.newTransformer();
+		} catch (TransformerConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		StringWriter writer = new StringWriter();
+	
+		DOMSource  source= new DOMSource(doc);
+		StreamResult result = new StreamResult(writer);
+ 
+		
+		try {
+			transformer.transform(source, result);
+		} catch (TransformerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		String kk = writer.toString();
+		
+		System.out.println(kk);
+        return kk;
     }
     
     private class CacheEntry{
@@ -246,7 +329,7 @@ public class KVCache implements KeyValueInterface {
     					return false;
     				}
     			}
-    			
+    			    			
     			return true;
     		}finally{
     			writeLock.unlock();
@@ -310,9 +393,14 @@ public class KVCache implements KeyValueInterface {
     		writeLock.lock();
     		
     		try{
-    			while(true){   				
-       				CacheEntry e = entries.removeFirst();
-
+    			while(true){   								
+       				if (entries.isEmpty() || (entries.size() < this.MAX_NUM_ELEMENT)){
+       					entries.add(new CacheEntry(key, value));
+       					return;
+       				}
+       				
+    				CacheEntry e = entries.removeFirst();
+ 
     				//all entry's isRefferred is false
     				if (this.referredCount==this.MAX_NUM_ELEMENT){
     					this.referredCount--;
