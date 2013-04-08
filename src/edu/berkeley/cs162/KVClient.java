@@ -210,7 +210,6 @@ public class KVClient implements KeyValueInterface {
 		try {
 			out.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
 		
@@ -219,7 +218,6 @@ public class KVClient implements KeyValueInterface {
 		try {
 			in.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
 		

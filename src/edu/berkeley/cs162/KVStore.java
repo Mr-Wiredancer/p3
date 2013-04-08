@@ -30,15 +30,30 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package edu.berkeley.cs162;
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 
 /**
@@ -47,7 +62,7 @@ import java.util.Hashtable;
  * system using a manual delay.
  *
  */
-public class KVStore implements KeyValueInterface {
+public class KVStore implements KeyValueInterface, Debuggable {
 	private Dictionary<String, String> store 	= null;
 	
 	public KVStore() {
@@ -140,16 +155,69 @@ public class KVStore implements KeyValueInterface {
      * @return XML representation of store
      */
     private String storeToXML(){
-    	//TODO: implement me. For now it is just JL-representation. Need to change to XML. 
-    	String result = "";
-    	
-    	Enumeration<String> e = store.keys();
-    	while (e.hasMoreElements()){
-    		String key = e.nextElement();
-    		String val = store.get(key);
-    		result+=String.format("%s,%s\n", key, val);
-    	}
-    	return result;   	
+
+    	DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = null;
+		try {
+			docBuilder = docFactory.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			//this should not happen
+			e.printStackTrace();
+		}
+ 
+		// root element
+		Document doc = docBuilder.newDocument();
+		Element rootElement = doc.createElement("KVStore");
+		doc.setXmlStandalone(true);
+		doc.appendChild(rootElement);
+		
+		Enumeration keys = this.store.keys();
+		while ( keys.hasMoreElements() ){
+			String key = (String)keys.nextElement();
+			String val = this.store.get(key);
+			
+			Element pairElement = doc.createElement("KVPair");
+			
+			Element keyElement = doc.createElement("Key");
+			keyElement.appendChild(doc.createTextNode(key));
+			
+			Element valueElement = doc.createElement("Value");
+			valueElement.appendChild(doc.createTextNode(val));
+			
+			pairElement.appendChild(keyElement);
+			pairElement.appendChild(valueElement);
+
+			rootElement.appendChild(pairElement);
+		}
+		
+		
+		
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer = null;
+		try {
+			transformer = transformerFactory.newTransformer();
+		} catch (TransformerConfigurationException e) {
+			//this should not happen too
+			e.printStackTrace();
+		}
+		
+		StringWriter writer = new StringWriter();
+	
+		DOMSource  source= new DOMSource(doc);
+		StreamResult result = new StreamResult(writer);
+ 
+		
+		try {
+			transformer.transform(source, result);
+		} catch (TransformerException e) {
+			//this should not happen
+			e.printStackTrace();
+		}
+		
+		String kk = writer.toString();
+		
+		System.out.println(kk);
+        return kk;  	
     }
 
     /**
@@ -169,39 +237,92 @@ public class KVStore implements KeyValueInterface {
 		}
     }
 
-    /**
-     * This dummy helper reads the file of JL-representation instead of XML. May be deleted later
-     * @param in
-     * @return
-     * @throws KVException
-     * @throws IOException
-     */
-    private Hashtable restoreHelper(BufferedReader in) throws KVException{
-    	Hashtable<String, String> newStore = new Hashtable<String, String>();
+
+    private Dictionary<String, String> checkDocStruture(Document doc) throws KVException{
+    	DEBUG.debug("doc");
     	
-    	String i;
-    	try {
-			while (( i = in.readLine())!=null){
-				i = i.replace("\n", "").replace("\r", "");
-				String [] pair = i.split(",");
-				
-				//not key,value format
-				if (pair.length!=2) throw new KVException(new KVMessage(KVMessage.RESPTYPE,"Unknown Error: Could not recognize the format of the file"));    		
-				//oversized key
-				if (pair[0].length()>256) throw new KVException(new KVMessage(KVMessage.RESPTYPE,"Oversized key"));
-				//oversized value
-				if (pair[1].length()>256*1024) throw new KVException(new KVMessage(KVMessage.RESPTYPE,"Oversized value"));
-				
-				newStore.put(pair[0], pair[1]);    		    		
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new KVException(
-					new KVMessage(KVMessage.RESPTYPE, "Unknown Error: error happens in the file reader"));
-			
-		}
+    	NodeList nodes = doc.getChildNodes();
+    	
+    	if (nodes.getLength()!=1){
+			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+    	}
+    	
+    	if (!doc.getFirstChild().getNodeName().equals("KVStore")){
+    		throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+    	}
+    	
+    	return checkStoreNodeStructure(doc.getFirstChild());	
+    }
+    
+    private Dictionary<String,String> checkStoreNodeStructure(Node storeNode) throws KVException{
+    	DEBUG.debug("store");
+    	Dictionary<String, String> newStore = new Hashtable<String, String>();
+    	
+    	NodeList nodes = storeNode.getChildNodes();
+    	
+    	for ( int i = 0; i < storeNode.getChildNodes().getLength(); i++){
+    		Node pair = nodes.item(i);
+    		if (!pair.getNodeName().equals("KVPair"))
+    			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+    	
+    		checkPairNodeStructure(pair, newStore);
+    	}
+    	
     	return newStore;
     }
+    
+    private void checkPairNodeStructure(Node pairNode, Dictionary<String, String> store) throws KVException{
+    	DEBUG.debug("pair");
+    	NodeList nodes = pairNode.getChildNodes();
+
+    	if (nodes.getLength()!=2){
+			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+    	}
+    	
+    	Node keyNode = nodes.item(0);
+    	if (!keyNode.getNodeName().equals("Key"))
+			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+    	String key = checkKeyNodeStructure(keyNode);
+    	
+    	Node valNode = nodes.item(1);
+    	if (!valNode.getNodeName().equals("Value"))
+			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+    	String value = checkValNodeStructure(valNode);
+    	
+    	store.put(key, value);
+    }
+    
+    private String checkKeyNodeStructure(Node keyNode) throws KVException{
+    	DEBUG.debug("key");
+    	NodeList nodes = keyNode.getChildNodes();
+    	
+    	if (nodes.getLength()!=1 || nodes.item(0).getNodeType() != Document.TEXT_NODE)
+			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+
+    	String key = nodes.item(0).getTextContent();
+    	
+    	if (key.length()>KVMessage.MAX_KEY_LENGTH)
+			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+
+    	return key;
+    }
+    
+    private String checkValNodeStructure(Node valNode) throws KVException{    	
+    	DEBUG.debug("value");
+	
+    	NodeList nodes = valNode.getChildNodes();
+		
+		if (nodes.getLength()!=1
+				|| nodes.item(0).getNodeType()!=Document.TEXT_NODE)
+			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+	
+		String value = nodes.item(0).getTextContent();
+		
+		if (value.length()>KVMessage.MAX_VALUE_LENGTH)
+			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
+	
+		return value;
+    }    
     
     /**
      * restore the state of the store to the one indicated by the file
@@ -211,16 +332,30 @@ public class KVStore implements KeyValueInterface {
     public synchronized void restoreFromFile(String fileName) throws KVException{
     	//TODO: implement me. For now it assumes the file format is JL-representation. Need to change to XML. 
     	try {
-			BufferedReader in = new BufferedReader(new FileReader(fileName));
-			
-			//change this to XML builder later
-			Hashtable newStore = this.restoreHelper(in);
-			
-			this.store = newStore;			
-		} catch (FileNotFoundException e) {
+    		
+    		File fXmlFile = new File(fileName);
+    		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+    		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+    		Document doc = dBuilder.parse(fXmlFile);
+    	 
+    		doc.getDocumentElement().normalize();
+    		
+    		Dictionary<String, String> newStore = checkDocStruture(doc);    		
+    		
+    		this.store = newStore;
+    		
+		} catch (ParserConfigurationException e) {
+			//this should not happen
 			e.printStackTrace();
-			throw new KVException(
-					new KVMessage(KVMessage.RESPTYPE, "Unknown Error: could not open the fiile "+fileName));			
+		} catch (SAXException e) {
+			//not a valid XML
+			e.printStackTrace();
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "IO Error") );
+		} catch (IOException e) {
+			//io error
+			e.printStackTrace();
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "IO Error") );
+
 		} 
     }
 }
