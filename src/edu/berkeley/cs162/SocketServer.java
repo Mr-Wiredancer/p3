@@ -9,7 +9,7 @@ import java.net.Socket;
  * arriving on a given unique (host, port) tuple. Ensure that this class 
  * remains generic by providing the connection handling logic in a NetworkHandler
  */
-public class SocketServer {
+public class SocketServer implements Debuggable{
 	String hostname;
 	int port;
 	NetworkHandler handler;
@@ -21,7 +21,7 @@ public class SocketServer {
 	}
 	
 	public void connect() throws IOException {
-    this.server = new ServerSocket(this.port);
+		this.server = new ServerSocket(this.port);
 	}
 	
 	/**
@@ -30,11 +30,11 @@ public class SocketServer {
 	 */
 	public void run() throws IOException {
 	      // TODO: implement me
-    while(true){
-      Socket s = server.accept();
-      System.out.println("accepted a socket");
-      this.handler.handle(s);
-    }
+	    while(true){
+	      Socket s = server.accept();
+	      DEBUG.debug("accepted a socket");
+	      this.handler.handle(s);
+	    }
 	}
 	
 	/** 
@@ -50,21 +50,19 @@ public class SocketServer {
 	 */
 	public void stop() {
 	      // TODO: implement me
-    try{
-      this.server.close();
-    }catch(Exception e){
-    
-    }
+		
+		//TODO: more cleanup. Maybe shutdown the threads in the thread pool, blablah	
+		this.finalize();
 
 	}
 	
 	private void closeSocket() {
 	     // TODO: implement me
-    try{
-      this.server.close();
-    }catch(Exception e){
-    
-    }
+	    try{
+	      this.server.close();
+	    }catch(IOException e){
+	    	//silence this exception
+	    }
 	}
 	
 	protected void finalize(){
