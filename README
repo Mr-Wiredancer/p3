@@ -1,0 +1,7 @@
+1. Keep master branch stable，Dont merge it to any other branch unless that branch is stable. Feel free to merge your working branches to master though. 
+
+2. Do your work on your own branch
+
+2. kvmessage and testcases branches are can be worked on independently. 
+
+3. to test based on other's work. merge your branch to their branch instead of merging to master branch
