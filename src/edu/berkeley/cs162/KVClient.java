@@ -128,6 +128,7 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		
 		this.closeHost(sock);
 	
+		DEBUG.debug("receved message: "+response.toXML());
 		if (!response.getMessage().equals("Success"))
 			throw new KVException (response);
 	}
@@ -242,6 +243,8 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		}
 		
 		this.closeHost(sock);
+		
+		DEBUG.debug("received message: "+response.toXML());
 		
 		if (!response.getMessage().equals("Success"))
 			throw new KVException(response);

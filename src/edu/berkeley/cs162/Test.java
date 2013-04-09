@@ -88,7 +88,10 @@ public class Test {
 				kc.put(three, seven);
 				
 				DEBUG.debug("get 3");
-				String answer = kc.get(three);
+				kc.get(three);
+				
+				DEBUG.debug("de 3");
+				kc.del(three);
 			}catch(Exception e){
 				DEBUG.debug("error");
 				e.printStackTrace();
