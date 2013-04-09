@@ -76,22 +76,27 @@ public class KVStore implements KeyValueInterface, Debuggable {
 	/**
 	 * Put the <key, value> pair in the store. Return true if key is already in the store; false otherwise.
 	 */
-	public synchronized boolean put(String key, String value) throws KVException {
+	public synchronized void put(String key, String value) throws KVException {
 		AutoGrader.agStorePutStarted(key, value);
 		
 		try {
 			putDelay();
-			if (store.get(key)==null){
-				store.put(key, value);
-				return false;
-			}else{
-				if (store.get(key).equals(value))
-					return false;
-				
-				//overwritting happens
-				store.put(key, value);
-				return true;
+			
+			//sanity check on key and value
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
 			}
+			if (value.length()>KVMessage.MAX_VALUE_LENGTH){
+				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+			}
+			if (value.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty value"));
+			}
+			
+			store.put(key, value);
 		} finally {
 			AutoGrader.agStorePutFinished(key, value);
 		}
@@ -102,6 +107,15 @@ public class KVStore implements KeyValueInterface, Debuggable {
 		
 		try {
 			getDelay();
+			
+			//sanity check on key
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+			}
+			
 			String retVal = this.store.get(key);
 			if (retVal == null) {
 //			    KVMessage msg = new KVMessage("resp", "key \"" + key + "\" does not exist in store");
@@ -122,6 +136,15 @@ public class KVStore implements KeyValueInterface, Debuggable {
 
 		try {
 			delDelay();
+			
+			//sanity check on key
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+			}
+			
 			String val;
 			if(key != null){
 				val = this.store.remove(key);
@@ -214,32 +237,35 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			e.printStackTrace();
 		}
 		
-		String kk = writer.toString();
+		String xml = writer.toString();
 		
-		System.out.println(kk);
-        return kk;  	
+		System.out.println(xml);
+        return xml;  	
     }
 
     /**
      * Dump the current state of store to corresponding file. This does not change the state of the store
      * @param fileName 
-     * @throws KVException when file not found and cannot create the file
      */
-    public synchronized void dumpToFile(String fileName) throws KVException {
+    public synchronized void dumpToFile(String fileName){
     	try {
 			PrintWriter out = new PrintWriter(fileName);
 			out.print(this.storeToXML());
 			out.close();
 		} catch (FileNotFoundException e) {
+			DEBUG.debug("file not found and couldnot create the file");
 			e.printStackTrace();
-			throw new KVException(
-					new KVMessage(KVMessage.RESPTYPE, "Unknown Error: could not open/create file "+fileName));
 		}
     }
 
 
+    /**
+     * STRICTLY checks the XML. The XML needs to have exactly the number of attributes and nodes and format as on the spec to pass the test
+     * @param doc
+     * @return return the new store dictionary
+     * @throws KVException
+     */
     private Dictionary<String, String> checkDocStruture(Document doc) throws KVException{
-    	DEBUG.debug("doc");
     	
     	NodeList nodes = doc.getChildNodes();
     	
@@ -255,7 +281,6 @@ public class KVStore implements KeyValueInterface, Debuggable {
     }
     
     private Dictionary<String,String> checkStoreNodeStructure(Node storeNode) throws KVException{
-    	DEBUG.debug("store");
     	Dictionary<String, String> newStore = new Hashtable<String, String>();
     	
     	NodeList nodes = storeNode.getChildNodes();
@@ -272,7 +297,6 @@ public class KVStore implements KeyValueInterface, Debuggable {
     }
     
     private void checkPairNodeStructure(Node pairNode, Dictionary<String, String> store) throws KVException{
-    	DEBUG.debug("pair");
     	NodeList nodes = pairNode.getChildNodes();
 
     	if (nodes.getLength()!=2){
@@ -293,7 +317,6 @@ public class KVStore implements KeyValueInterface, Debuggable {
     }
     
     private String checkKeyNodeStructure(Node keyNode) throws KVException{
-    	DEBUG.debug("key");
     	NodeList nodes = keyNode.getChildNodes();
     	
     	if (nodes.getLength()!=1 || nodes.item(0).getNodeType() != Document.TEXT_NODE)
@@ -301,14 +324,13 @@ public class KVStore implements KeyValueInterface, Debuggable {
 
     	String key = nodes.item(0).getTextContent();
     	
-    	if (key.length()>KVMessage.MAX_KEY_LENGTH)
+    	if (key.length()>KVMessage.MAX_KEY_LENGTH || key.length()==0)
 			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
 
     	return key;
     }
     
     private String checkValNodeStructure(Node valNode) throws KVException{    	
-    	DEBUG.debug("value");
 	
     	NodeList nodes = valNode.getChildNodes();
 		
@@ -318,7 +340,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 	
 		String value = nodes.item(0).getTextContent();
 		
-		if (value.length()>KVMessage.MAX_VALUE_LENGTH)
+		if (value.length()>KVMessage.MAX_VALUE_LENGTH || value.length()==0)
 			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
 	
 		return value;
@@ -329,8 +351,8 @@ public class KVStore implements KeyValueInterface, Debuggable {
      * @param fileName 
      * @throws KVException if file could not be opened or there is error when parsing the XML
      */
-    public synchronized void restoreFromFile(String fileName) throws KVException{
-    	//TODO: implement me. For now it assumes the file format is JL-representation. Need to change to XML. 
+    public synchronized void restoreFromFile(String fileName){
+    	//only delete the store if restore succeeds
     	try {
     		
     		File fXmlFile = new File(fileName);
@@ -346,16 +368,22 @@ public class KVStore implements KeyValueInterface, Debuggable {
     		
 		} catch (ParserConfigurationException e) {
 			//this should not happen
+			DEBUG.debug("this should not happen");
 			e.printStackTrace();
 		} catch (SAXException e) {
 			//not a valid XML
+			DEBUG.debug("this is not a valid xml");
 			e.printStackTrace();
-			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "IO Error") );
+//			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "IO Error") );
 		} catch (IOException e) {
 			//io error
+			DEBUG.debug("io error");
 			e.printStackTrace();
-			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "IO Error") );
+//			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "IO Error") );
 
+		} catch (KVException e) {
+			DEBUG.debug(e.getMsg().getMessage());
+			e.printStackTrace();
 		} 
     }
 }

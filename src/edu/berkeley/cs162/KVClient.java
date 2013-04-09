@@ -63,7 +63,7 @@ public class KVClient implements KeyValueInterface, Debuggable {
 	/**
 	 * what does the return value mean? for unsuccessful update, should we raise an exception?
 	 */
-	public boolean put(String key, String value) throws KVException {
+	public void put(String key, String value) throws KVException {
 	    // TODO: Implement Me!
 		
 		//check for length of key and value
@@ -127,12 +127,9 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		}
 		
 		this.closeHost(sock);
-		
-		//assume we return true if success and false otherwise
-		if ( response.getMessage()=="Success")
-			return true;
-		else
-			return false;
+	
+		if (!response.getMessage().equals("Success"))
+			throw new KVException (response);
 	}
 
 	//what to return when unsuccessful? should we throw exception or return null?
@@ -191,7 +188,7 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		//
 		if (response.getMessage()!=null){
 			DEBUG.debug("get request has error");
-			return null;
+			throw new KVException(response);
 		}else{
 			DEBUG.debug("successful get");
 			return response.getValue(); 
@@ -245,6 +242,9 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		}
 		
 		this.closeHost(sock);
+		
+		if (!response.getMessage().equals("Success"))
+			throw new KVException(response);
 	}	
 	
 

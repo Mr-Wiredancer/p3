@@ -55,42 +55,57 @@ public class KVServer implements KeyValueInterface,Debuggable {
 		AutoGrader.registerKVServer(dataStore, dataCache);
 	}
 	
-	public boolean put(String key, String value) throws KVException {
+	/**
+	 * Tries to put <key, value> in the server. First call cache's put(will replace if necessary) and then server's put.
+	 * @param key
+	 * @param value
+	 * @throws KVException when key or value or both didn't pass sanity check. 
+	 */
+	public void put(String key, String value) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agKVServerPutStarted(key, value);
 	
 		try{
 			DEBUG.debug(String.format("requestd to put <%s, %s> in the store", key, value));
 			
+			//sanity check on key and value
 			if (key.length()>KVMessage.MAX_KEY_LENGTH){
 				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
 			}
-			
 			if (value.length()>KVMessage.MAX_VALUE_LENGTH){
 				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
 			}
-			
-			boolean replacementNeeded = this.dataCache.put(key, value);
-			
-			boolean result = this.dataStore.put(key, value);
-			
-			if (replacementNeeded){
-				this.dataCache.replace(key, value);
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
 			}
-			return result;
-		
+			if (value.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty value"));
+			}
+			
+			this.dataCache.put(key, value);
+			this.dataStore.put(key, value);
+
 		}finally{
 			AutoGrader.agKVServerPutFinished(key, value);
 		}
 	}
 	
+	/**
+	 * Tries to get the value mapped to key. First cal cache's GET and then store's GET. Will do an entry replacement if necessary
+	 * @param key
+	 * @throws KVException when the key is not in store. Or key doesn't pass sanity check.
+	 */
 	public String get (String key) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agKVServerGetStarted(key);
 		
 		try{
+			//sanity check on key
 			if (key.length()>KVMessage.MAX_KEY_LENGTH){
 				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
 			}
 			
 			//try to get the value in cache
@@ -100,29 +115,40 @@ public class KVServer implements KeyValueInterface,Debuggable {
 			}
 			
 			//key is not in cache, try to get the value in the store
-			String storeResult = this.dataStore.get(key);
-			if (storeResult!=null){
-				this.dataCache.replace(key, storeResult);
-				return storeResult;
-			}else{
-				//key is not even in the store
-				throw new KVException(new KVMessage("resp", "key is not in store"));
-			}
+			String storeResult = this.dataStore.get(key); //this will throw KVException if key is not in store
+			this.dataCache.replace(key, storeResult);
+			return storeResult;
+
 		}finally{
 			AutoGrader.agKVServerGetFinished(key);
 		}
 		
 	}
 	
+	/**
+	 * Delete the value mapped to key. It calles the cache's DEL and then store's DEL
+	 * @param key
+	 * @throws KVException when key is not in store. Or key doesn't pass sanity check.
+	 */
 	public void del (String key) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agKVServerDelStarted(key);
 
-		// TODO: implement me
-		this.dataCache.del(key);
-		this.dataStore.del(key); // 
+		try{
+			//sanity check on key
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+			}
+			
+			this.dataCache.del(key);
+			this.dataStore.del(key); //will throw KVException if is not in  
 		
 		// Must be called before returning
-		AutoGrader.agKVServerDelFinished(key);
+		}finally{
+			AutoGrader.agKVServerDelFinished(key);
+		}
 	}
 }

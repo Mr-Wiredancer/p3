@@ -10,9 +10,10 @@ public class ThreadPool {
 	protected WorkerThread threads[] = null;
 	LinkedList<Runnable> jobQueue = new LinkedList<Runnable>();
 	private ReadWriteLock lock = new ReentrantReadWriteLock();
+	private Lock jobQueueLock = lock.writeLock();
 	
-	public Lock helperLock = new ReentrantLock();
-	public Condition jobQueueNotEmpty = helperLock.newCondition();
+	public Lock cvLock = new ReentrantLock();
+	public Condition jobQueueNotEmpty = cvLock.newCondition();
 	/**
 	 * Initialize the number of threads required in the threadpool. 
 	 * 
@@ -29,6 +30,7 @@ public class ThreadPool {
 		for (int i = 0; i < threads.length; i++){
 			threads[i] = new WorkerThread(this);
 		}
+		
 		System.out.println("there are "+threads.length+" threads");
 		for (WorkerThread w : this.threads){
 			w.start();
@@ -43,14 +45,13 @@ public class ThreadPool {
 	 */
 	public void addToQueue(Runnable r) throws InterruptedException
 	{
-	      // TODO: implement me
-		lock.writeLock().lock();	
+		jobQueueLock.lock();	
 		jobQueue.add(r);
-		lock.writeLock().unlock();
+		jobQueueLock.unlock();
 		
-		this.helperLock.lock();
+		cvLock.lock();
 		this.jobQueueNotEmpty.signal();
-		this.helperLock.unlock();
+		cvLock.unlock();
 	}
 	
 	/** 
@@ -58,16 +59,22 @@ public class ThreadPool {
 	 * @return A runnable task that has to be executed
 	 * @throws InterruptedException 
 	 */
-	public synchronized Runnable getJob() throws InterruptedException {
-	    lock.writeLock().lock();
-	    Runnable r = null;
-	    try{
-	    r = jobQueue.remove();
-	    }catch(Exception e){
-	    	
-	    }
-	    lock.writeLock().unlock();
-	    return r;
+	public Runnable getJob() throws InterruptedException {
+		while (true){
+			Runnable r = null;
+			jobQueueLock.lock();
+			if (!jobQueue.isEmpty())
+				r = jobQueue.removeFirst();
+			jobQueueLock.unlock();
+			
+			if (r==null){
+				cvLock.lock();
+				jobQueueNotEmpty.await();
+				cvLock.unlock();
+			}else{
+				return r;
+			}
+		}
 	}
 }
 
@@ -90,41 +97,20 @@ class WorkerThread extends Thread implements Debuggable {
 		this.setName("WorkerThread"+WorkerThread.workerThreadCounter++);
 	}
 
-	public void debug(String s){
-		System.out.println(Thread.currentThread().getName()+": "+s);
-	}
 	/**
 	 * Scan for and execute tasks.
 	 */
 	public void run()
 	{
-		DEBUG.debug("running");
-	      // TODO: implement me
-		Runnable r = null;
-		try {
-			r = o.getJob();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		DEBUG.debug("begins running");
 		while (true){
-			if (r !=null ){
+			Runnable r = null;
+			try {
+				r = o.getJob(); // would wait until it gets a job
 				DEBUG.debug("get a job");
 				r.run();
-			}else{
-				try {
-					o.helperLock.lock();
-					o.jobQueueNotEmpty.await();
-					o.helperLock.unlock();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			try {
-				r = o.getJob();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
+				//ignore this exception
 				e.printStackTrace();
 			}
 		}

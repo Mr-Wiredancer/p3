@@ -35,11 +35,11 @@ import java.util.ArrayList;
 
 public class AutoGrader {
 	
-	private static long STORE_DELAY = 1000;
-	private static long CACHE_DELAY = 10;
+//	private static long STORE_DELAY = 1000;
+//	private static long CACHE_DELAY = 10;
 	
-//	private static long STORE_DELAY = 0;
-//	private static long CACHE_DELAY = 0;
+	private static long STORE_DELAY = 0;
+	private static long CACHE_DELAY = 0;
 	
 	private static KVStore dataStore = null;
 	private static KVCache dataCache = null;

@@ -83,9 +83,12 @@ public class Test {
 			try{
 				String three = "3";
 				String seven = "7";
+				
+				DEBUG.debug("put 3 7");
+				kc.put(three, seven);
+				
 				DEBUG.debug("get 3");
 				String answer = kc.get(three);
-				DEBUG.debug("status: " + answer);
 			}catch(Exception e){
 				DEBUG.debug("error");
 				e.printStackTrace();

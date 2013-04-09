@@ -76,36 +76,36 @@ public class KVCache implements KeyValueInterface, Debuggable {
 	 * @param key the key whose associated value is to be returned.
 	 * @return the value associated to this key, or null if no value with this key exists in the cache.
 	 */
-	public String get(String key) {
+	public String get(String key) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agCacheGetStarted(key);
 		AutoGrader.agCacheGetDelay();
-        
-		DEBUG.debug("Cache receives a get request with key "+key);
-		int setId = this.getSetId(key);
-		String result = this.sets[setId].get(key);
-		// Must be called before returning
 		
-		AutoGrader.agCacheGetFinished(key);
-		return result;
+		DEBUG.debug("Cache receives a get request with key "+key);
+        try{
+			//sanity check on key
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+			}
+		
+			int setId = this.getSetId(key);
+			String result = this.sets[setId].get(key);
+			DEBUG.debug("Cache returns result for key "+key+" : "+result);
+			// Must be called before returning
+			
+			return result;
+        }finally{
+        	AutoGrader.agCacheGetFinished(key);
+        }
 	}
 	
 	public void replace(String key, String value){
 		this.sets[getSetId(key)].replace(key, value);
 	}
-
 	
-	/***
-	 * Original:
-	 * Adds an entry to this cache.
-	 * If an entry with the specified key already exists in the cache, it is replaced by the new entry.
-	 * If the cache is full, an entry is removed from the cache based on the eviction policy
-	 * Assumes the corresponding set has already been locked for writing.
-	 * @param key	the key with which the specified value is to be associated.
-	 * @param value	a value to be associated with the specified key.
-	 * @return true if something has been overwritten 
-	 */
-
 	/**
 	 * Adds an entry to this cache.
 	 * If an entry with the specified key already exists in the cache, it is replaced by the new entry.
@@ -113,16 +113,29 @@ public class KVCache implements KeyValueInterface, Debuggable {
 	 * Assumes the corresponding set has already been locked for writing.
 	 * @param key	the key with which the specified value is to be associated.
 	 * @param value	a value to be associated with the specified key.
-	 * @return true if a replacement is needed 
 	 */
-	public boolean put(String key, String value) {
+	public void put(String key, String value)throws KVException {
 		// Must be called before anything else
 		AutoGrader.agCachePutStarted(key, value);
 		AutoGrader.agCachePutDelay();
 
 		DEBUG.debug("Cache receives a put request with key "+key+" and value "+value);
 		try{
-			return this.sets[this.getSetId(key)].put(key, value);
+			//sanity check on key and value
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			if (value.length()>KVMessage.MAX_VALUE_LENGTH){
+				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+			}
+			if (value.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty value"));
+			}
+			
+			this.sets[this.getSetId(key)].put(key, value);
 		}finally{
 			AutoGrader.agCachePutFinished(key, value);
 		}
@@ -132,17 +145,29 @@ public class KVCache implements KeyValueInterface, Debuggable {
 	 * Removes an entry from this cache.
 	 * Assumes the corresponding set has already been locked for writing.
 	 * @param key	the key with which the specified value is to be associated.
+	 * @throws KVException 
 	 */
-	public void del (String key) {
+	public void del (String key) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agCacheGetStarted(key);
 		AutoGrader.agCacheDelDelay();
 		
 		DEBUG.debug("Cache receives a del request with key "+key);
+		try{
+		//sanity check on key
+		if (key.length()>KVMessage.MAX_KEY_LENGTH){
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+		}
+		if (key.length()==0){
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+		}
+		
 		this.sets[this.getSetId(key)].del(key);
 		
 		// Must be called before returning
-		AutoGrader.agCacheDelFinished(key);
+		}finally{
+			AutoGrader.agCacheDelFinished(key);
+		}
 	}
 	
 	/**
@@ -150,8 +175,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
 	 * @return	the write lock of the set that contains key.
 	 */
 	public WriteLock getWriteLock(String key) {
-	    // TODO: Implement Me!
-	    return null;
+	    return this.sets[this.getSetId(key)].getWriteLock();
 	}
 	
 	/**
@@ -162,9 +186,12 @@ public class KVCache implements KeyValueInterface, Debuggable {
 	private int getSetId(String key) {
 		return Math.abs(key.hashCode()) % numSets;
 	}
-	
+
+	/**
+	 * output the cache's content as XML
+	 * @return XML representation of cache
+	 */
     public String toXML() {
-        // TODO: Implement Me!
     	DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = null;
 		try {
@@ -230,7 +257,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
 		try {
 			transformer = transformerFactory.newTransformer();
 		} catch (TransformerConfigurationException e) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("this should not happen");
 			e.printStackTrace();
 		}
 		
@@ -243,14 +270,13 @@ public class KVCache implements KeyValueInterface, Debuggable {
 		try {
 			transformer.transform(source, result);
 		} catch (TransformerException e) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("this should not happen");
 			e.printStackTrace();
 		}
 		
-		String kk = writer.toString();
+		String xml = writer.toString();
 		
-		System.out.println(kk);
-        return kk;
+        return xml;
     }
     
     private class CacheEntry{
@@ -306,13 +332,17 @@ public class KVCache implements KeyValueInterface, Debuggable {
     		writeLock = readWriteLock.writeLock();
     	}
     	
+    	public WriteLock getWriteLock(){
+    		return this.writeLock;
+    	}
+    	
     	/**
     	 * sequential search for the key.
     	 * @param key
     	 * @param value
     	 * @return true if a replacement is needed (not if an overwritting happens)
     	 */
-    	public boolean put(String key, String value){
+    	public void put(String key, String value){
     		writeLock.lock();
     		
     		try{
@@ -320,20 +350,21 @@ public class KVCache implements KeyValueInterface, Debuggable {
     				CacheEntry e = entries.get(i);
     				String k = e.getKey();
     				if (k.equals(key)){
-    					//set the entry's isReferred bit
-    					if (!e.isReferred()){
-    						this.referredCount++;	
-    						e.refer();
-    					}    					
-    					e.setValue(value);
-    					return false;
+   					    e.setValue(value);
+   					    return;
     				}
-    			}
-    			    			
-    			return true;
+    			}		
+    			//the key is not in the cache. Needs replacement
+    			this.replaceHelper(key, value);
     		}finally{
     			writeLock.unlock();
     		}
+    	}
+    	
+    	public void replace(String key, String value){
+    		writeLock.lock();
+    		this.replaceHelper(key, value);
+    		writeLock.unlock();
     	}
     	
     	/**
@@ -386,43 +417,40 @@ public class KVCache implements KeyValueInterface, Debuggable {
     	
     	/**
     	 * Called when a replacement is needed. <key, value> is retreived from KVStore.
+    	 * Assume writeLock is held by currentThread. And caller should handle the unlocking of writeLock
     	 * @param key 
     	 * @param value
     	 */
-    	public void replace(String key, String value){
-    		writeLock.lock();
-    		
-    		try{
-    			while(true){   								
-       				if (entries.isEmpty() || (entries.size() < this.MAX_NUM_ELEMENT)){
-       					entries.add(new CacheEntry(key, value));
-       					return;
-       				}
-       				
-    				CacheEntry e = entries.removeFirst();
- 
-    				//all entry's isRefferred is false
-    				if (this.referredCount==this.MAX_NUM_ELEMENT){
-    					this.referredCount--;
-    					entries.add(new CacheEntry(key, value));
-    					return;
-    				}
-    				
-    				//isReffered is false
-    				if (e.shouldBeReplaced()){
-    					entries.add(new CacheEntry(key, value));
-    					return;
-    				}
-    				
-    				//set the firs element's isReffered to false and remove it the the end of the queue
-    				e.miss();
-    				this.referredCount--;
-    				entries.addLast(e);
-    			}
-    		}finally{
-    			writeLock.unlock();
-    		}
-    		
+    	private void replaceHelper(String key, String value){    		
+			assert(writeLock.isHeldByCurrentThread());
+			
+			//set is empty or not null yet
+			if (entries.isEmpty() || (entries.size() < this.MAX_NUM_ELEMENT)){
+				entries.add(new CacheEntry(key, value));
+				return;
+			}
+			
+			//all entry's isRefferred is false
+			if (this.referredCount==this.MAX_NUM_ELEMENT){
+				this.referredCount--;
+				entries.add(new CacheEntry(key, value));
+				return;
+			}
+			
+			while(true){   								
+				CacheEntry e = entries.removeFirst();
+ 	
+				//isReffered is false
+				if (e.shouldBeReplaced()){
+					entries.add(new CacheEntry(key, value));
+					return;
+				}
+				
+				//set the firs element's isReffered to false and remove it the the end of the queue
+				e.miss();
+				this.referredCount--;
+				entries.addLast(e);
+			}
     	}
     }
 }

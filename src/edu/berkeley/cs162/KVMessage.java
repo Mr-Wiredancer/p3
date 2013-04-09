@@ -28,7 +28,6 @@ import org.xml.sax.SAXException;
  */
 public class KVMessage implements Debuggable{
 
-	//TODO this is now a naive implementation for testing purpose without use of XML
 	public static final String GETTYPE = "getreq";
 	public static final String PUTTYPE = "putreq";
 	public static final String DELTYPE = "delreq";
@@ -40,7 +39,6 @@ public class KVMessage implements Debuggable{
 	private String msgType = null;
 	private String key = null;
 	private String value = null;
-	private String status = null;
 	private String message = null;
 	
 	public final String getKey() {
@@ -57,14 +55,6 @@ public class KVMessage implements Debuggable{
 
 	public final void setValue(String value) {
 		this.value = value;
-	}
-
-	public final String getStatus() {
-		return status;
-	}
-
-	public final void setStatus(String status) {
-		this.status = status;
 	}
 
 	public final String getMessage() {
@@ -94,7 +84,6 @@ public class KVMessage implements Debuggable{
 	 * @throws KVException of type "resp" with message "Message format incorrect" if msgType is unknown
 	 */
 	public KVMessage(String msgType) throws KVException {
-	    // TODO: implement me
 		if ( msgType!=KVMessage.DELTYPE && msgType!=KVMessage.GETTYPE && msgType!=KVMessage.PUTTYPE && msgType!=KVMessage.RESPTYPE ){	
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Message format incorrect"));
 		}
@@ -118,7 +107,6 @@ public class KVMessage implements Debuggable{
      * c. "Message format incorrect" - if there message does not conform to the required specifications. Examples include incorrect message type. 
      */
 	public KVMessage(InputStream input) throws KVException {
-	     // TODO: implement me
     	try {
     		
     		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -174,8 +162,8 @@ public class KVMessage implements Debuggable{
 		if ( nodes.getLength()!=1 || nodes.item(0).getNodeType()!=Document.TEXT_NODE)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
-		String key = messageNode.getFirstChild().getTextContent();
-		return key;
+		String message = messageNode.getFirstChild().getTextContent();
+		return message;
 	}
 	
 	private String checkKeyNode(Node keyNode) throws KVException{
@@ -189,6 +177,9 @@ public class KVMessage implements Debuggable{
 		String key = keyNode.getFirstChild().getTextContent();
 		if (key.length()>KVMessage.MAX_KEY_LENGTH)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+		if (key.length()==0)
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+		
 		return key;
 	}
 	
@@ -200,10 +191,13 @@ public class KVMessage implements Debuggable{
 		if ( nodes.getLength()!=1 || nodes.item(0).getNodeType()!=Document.TEXT_NODE)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
-		String key = valNode.getFirstChild().getTextContent();
-		if (key.length()>KVMessage.MAX_VALUE_LENGTH)
+		String val = valNode.getFirstChild().getTextContent();
+		if (val.length()>KVMessage.MAX_VALUE_LENGTH)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized value"));
-		return key;
+		if (val.length()==0)
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty value"));
+
+		return val;
 	}
 	
 	/**
@@ -245,9 +239,9 @@ public class KVMessage implements Debuggable{
 		if (nodes.getLength()!=1)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
-		Node key = nodes.item(0);
+		Node message = nodes.item(0);
 		
-		if (!key.getNodeName().equals("Message"))
+		if (!message.getNodeName().equals("Message"))
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 		
 	}
@@ -297,10 +291,6 @@ public class KVMessage implements Debuggable{
 				|| doc.getChildNodes().getLength()!=1 
 				|| !doc.getFirstChild().getNodeName().equals("KVMessage"))
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE,"XML Error: Received unparseable message"));
-	}
-	
-	private boolean isValidMessage(Document dom){
-		return true;
 	}
 	
 	/**
@@ -389,23 +379,22 @@ public class KVMessage implements Debuggable{
 			e.printStackTrace();
 		}
 				
-		String kk = writer.toString();
+		String xml = writer.toString();
 
 		DEBUG.debug("successfully built XML");
-		return kk;
+		return xml;
 			
 	}
 	
 	public void sendMessage(Socket sock) throws KVException {
-	      // TODO: implement me
 		String msg = this.toXML();
 		try {
 			PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
 			out.println(msg);
-			out.close();
+			sock.shutdownOutput();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unkown Error: IO error in sendMessage"));
 		}
 	}	
 }
