@@ -74,7 +74,7 @@ public class ThreadPool {
 /**
  * The worker threads that make up the thread pool.
  */
-class WorkerThread extends Thread {
+class WorkerThread extends Thread implements Debuggable {
 	/**
 	 * The constructor.
 	 * 
@@ -98,7 +98,7 @@ class WorkerThread extends Thread {
 	 */
 	public void run()
 	{
-		debug("running");
+		DEBUG.debug("running");
 	      // TODO: implement me
 		Runnable r = null;
 		try {
@@ -109,7 +109,7 @@ class WorkerThread extends Thread {
 		}
 		while (true){
 			if (r !=null ){
-				debug("get a job");
+				DEBUG.debug("get a job");
 				r.run();
 			}else{
 				try {

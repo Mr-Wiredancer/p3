@@ -1,6 +1,7 @@
 package edu.berkeley.cs162;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -55,7 +56,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			}			
 			
 			try {
-				out.close();
+				client.shutdownOutput();
 			} catch (IOException e) {
 				DEBUG.debug("could not close the output stream");
 				e.printStackTrace();
@@ -101,20 +102,22 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 		public void run() {
 		     try {
 		    	 
-				KVMessage msg = new KVMessage(client.getInputStream());
+		    	InputStream in = client.getInputStream();
+		    	 
+				KVMessage msg = new KVMessage(new KVMessage.NoCloseInputStream(in));
 				
 				//at this point, the msg is a valid KVMessage
 				DEBUG.debug("the job is: "+ msg.toXML());
 				//get request
-				if ( msg.getMsgType()==KVMessage.GETTYPE){
+				if ( msg.getMsgType().equals(KVMessage.GETTYPE)){
 					handleGet(msg);
 				
 				//put request	
-				}else if ( msg.getMsgType()==KVMessage.PUTTYPE){
+				}else if ( msg.getMsgType().equals(KVMessage.PUTTYPE)){
 					handlePut(msg);
 					
 				//del request	
-				}else if (msg.getMsgType()==KVMessage.DELTYPE){
+				}else if (msg.getMsgType().equals(KVMessage.DELTYPE)){
 					handleDel(msg);
 				}else{
 					//resp request
@@ -149,6 +152,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 		Runnable r = new ClientHandler(kv_Server, client);
 		try {
 			threadpool.addToQueue(r);
+			DEBUG.debug("added to queue");
 		} catch (InterruptedException e) {
 			// Ignore this error
 			return;

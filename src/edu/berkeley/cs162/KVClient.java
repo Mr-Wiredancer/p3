@@ -27,10 +27,10 @@ public class KVClient implements KeyValueInterface, Debuggable {
 	}
 	
 	private Socket connectHost() throws KVException {
-	    // TODO: Implement Me!  
 	    Socket socket;
 	    try{
 	    	socket = new Socket(this.server, port);
+	    	DEBUG.debug("Successfully connected to host");
 	    	return socket;
 	    	
 	    //could not connect to the server/port tuple	
@@ -51,6 +51,7 @@ public class KVClient implements KeyValueInterface, Debuggable {
 	    // TODO: Implement Me!
 		try {
 			sock.close();
+			DEBUG.debug("Successfully closed the connection");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			DEBUG.debug("cannot close "+this.server+" with port "+this.port);
@@ -102,11 +103,12 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		msg.setKey(key);
 		msg.setValue(value);
 		
+		DEBUG.debug("the get request is: "+msg.toXML());
+		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
-		DEBUG.debug("the put request is: "+msg.toXML());
 		try {
-			out.close();
+			sock.shutdownOutput();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			DEBUG.debug("could not close the outputstream");
@@ -131,8 +133,6 @@ public class KVClient implements KeyValueInterface, Debuggable {
 			return true;
 		else
 			return false;
-	
-		
 	}
 
 	//what to return when unsuccessful? should we throw exception or return null?
@@ -162,34 +162,40 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		
 		KVMessage msg = new KVMessage(KVMessage.GETTYPE);
 		msg.setKey(key);
+		DEBUG.debug(msg.toXML());
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
-		DEBUG.debug("the get request is: "+msg.toXML());
-
+		
 		try {
-			out.close();
+			sock.shutdownOutput();
+			DEBUG.debug("successfully closed output stream");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("could not close output stream");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
-		
+				
 		KVMessage response = new KVMessage(in);
 		
+		DEBUG.debug("Sucessfully got response from server");
+		DEBUG.debug(response.toXML());
 		try {
 			in.close();
+			DEBUG.debug("successfully closed input stream");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("cannot close input stream");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
 		this.closeHost(sock);
 		
 		//
-		if (response.getMessage()!=null)
+		if (response.getMessage()!=null){
+			DEBUG.debug("get request has error");
 			return null;
-		else
+		}else{
+			DEBUG.debug("successful get");
 			return response.getValue(); 
-		
+		}
 	}
 	
 	// what to do when delete fails?
@@ -218,13 +224,14 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		
 		KVMessage msg = new KVMessage(KVMessage.DELTYPE);
 		msg.setKey(key);
+
+		DEBUG.debug("the del request is: "+msg.toXML());
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
-		DEBUG.debug("the del request is: "+msg.toXML());
 
 		try {
-			out.close();
+			sock.shutdownOutput();
 		} catch (IOException e) {
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}

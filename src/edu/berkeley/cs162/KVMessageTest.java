@@ -54,7 +54,7 @@ public class KVMessageTest {
 		try{
 			KVMessage msg = new KVMessage(KVMessage.GETTYPE);
 			msg.setKey("key1");
-			msg.toXML();
+			System.out.println(msg.toXML());
 		}catch(KVException e){
 			fail();
 		}

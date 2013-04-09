@@ -4,12 +4,13 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 public class Test {
 	public static int clientThreadCounter = 0;
 	
 	@org.junit.Test
-	public void test() {
+	public void test() {		
 		ServerThread sThread = new ServerThread();
 		sThread.start();
 		
@@ -24,8 +25,12 @@ public class Test {
 		ClientThread cThread = new ClientThread();
 		cThread.start();
 		
-		ClientThread cThread2 = new ClientThread();
-		cThread2.start();
+		try{
+			sThread.join();
+			cThread.join();
+		}catch (Exception e){
+			
+		}
 	}
 	
 
@@ -78,9 +83,9 @@ public class Test {
 			try{
 				String three = "3";
 				String seven = "7";
-				DEBUG.debug("putting (3, 7)");
-				boolean status = kc.put(three, seven);
-				DEBUG.debug("status: " + status);
+				DEBUG.debug("get 3");
+				String answer = kc.get(three);
+				DEBUG.debug("status: " + answer);
 			}catch(Exception e){
 				DEBUG.debug("error");
 				e.printStackTrace();

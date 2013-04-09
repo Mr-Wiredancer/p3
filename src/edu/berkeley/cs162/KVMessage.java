@@ -26,7 +26,7 @@ import org.xml.sax.SAXException;
  * This is the object that is used to generate messages the XML based messages 
  * for communication between clients and servers. 
  */
-public class KVMessage {
+public class KVMessage implements Debuggable{
 
 	//TODO this is now a naive implementation for testing purpose without use of XML
 	public static final String GETTYPE = "getreq";
@@ -80,7 +80,7 @@ public class KVMessage {
 	}
 
 	/* Solution from http://weblogs.java.net/blog/kohsuke/archive/2005/07/socket_xml_pitf.html */
-	private class NoCloseInputStream extends FilterInputStream {
+	public static class NoCloseInputStream extends FilterInputStream {
 	    public NoCloseInputStream(InputStream in) {
 	        super(in);
 	    }
@@ -309,15 +309,20 @@ public class KVMessage {
 	 * @throws KVException if not enough data is available to generate a valid KV XML message
 	 */
 	public String toXML() throws KVException {
+		DEBUG.debug("building XML for KVMessage");
+		
     	DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = null;
 		try {
 			docBuilder = docFactory.newDocumentBuilder();
+
 		} catch (ParserConfigurationException e) {
-			//this should not happen
+			DEBUG.debug("this should not happen");
 			e.printStackTrace();
 		}
  
+		System.out.println("building document elements");
+		
 		// root element
 		Document doc = docBuilder.newDocument();
 		Element rootElement = doc.createElement("KVMessage");
@@ -383,8 +388,10 @@ public class KVMessage {
 			//this should not happen
 			e.printStackTrace();
 		}
-		
+				
 		String kk = writer.toString();
+
+		DEBUG.debug("successfully built XML");
 		return kk;
 			
 	}
