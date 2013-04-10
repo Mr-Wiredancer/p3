@@ -28,6 +28,9 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 		threadpool = new ThreadPool(connections);	
 	}
 	
+	public void cleanup(){
+		threadpool.cleanup();
+	}
 
 	private class ClientHandler implements Runnable {
 		private KVServer kvServer = null;

@@ -3,7 +3,7 @@ package edu.berkeley.cs162;
 import java.util.LinkedList;
 import java.util.concurrent.locks.*;
 
-public class ThreadPool {
+public class ThreadPool implements Debuggable{
 	/**
 	 * Set of threads in the threadpool
 	 */
@@ -21,9 +21,14 @@ public class ThreadPool {
 	 */
 	public ThreadPool(int size)
 	{      
-	    // TODO: implement me
 		threads = new WorkerThread[size];
 		initializeThreads();
+	}
+	
+	public void cleanup(){
+		for (WorkerThread t : threads){
+			t.signalFinish();
+		}
 	}
 	
 	private void initializeThreads(){
@@ -31,7 +36,7 @@ public class ThreadPool {
 			threads[i] = new WorkerThread(this);
 		}
 		
-		System.out.println("there are "+threads.length+" threads");
+		DEBUG.debug("there are "+threads.length+" threads");
 		for (WorkerThread w : this.threads){
 			w.start();
 		}
@@ -91,6 +96,8 @@ class WorkerThread extends Thread implements Debuggable {
 	
 	private ThreadPool o;
 	
+	private boolean run = true;
+	
 	WorkerThread(ThreadPool o)
 	{
 		this.o = o;
@@ -103,7 +110,7 @@ class WorkerThread extends Thread implements Debuggable {
 	public void run()
 	{
 		DEBUG.debug("begins running");
-		while (true){
+		while (run){
 			Runnable r = null;
 			try {
 				r = o.getJob(); // would wait until it gets a job
@@ -114,6 +121,10 @@ class WorkerThread extends Thread implements Debuggable {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public void signalFinish(){
+		this.run = false;
 	}
 	
 }

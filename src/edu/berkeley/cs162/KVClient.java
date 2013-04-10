@@ -189,7 +189,8 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		//
 		if (response.getMessage()!=null){
 			DEBUG.debug("get request has error");
-			throw new KVException(response);
+			DEBUG.debug(response.toXML());
+			return null;
 		}else{
 			DEBUG.debug("successful get");
 			return response.getValue(); 
@@ -247,7 +248,7 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		DEBUG.debug("received message: "+response.toXML());
 		
 		if (!response.getMessage().equals("Success"))
-			throw new KVException(response);
+			DEBUG.debug(response.toXML());
 	}	
 	
 
