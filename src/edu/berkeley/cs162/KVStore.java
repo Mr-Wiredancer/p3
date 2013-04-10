@@ -239,7 +239,6 @@ public class KVStore implements KeyValueInterface, Debuggable {
 		
 		String xml = writer.toString();
 		
-		System.out.println(xml);
         return xml;  	
     }
 

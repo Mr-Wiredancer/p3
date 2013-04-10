@@ -36,7 +36,7 @@ public class PlayConsole {
 		
 		public void run(){
 			try{
-				KVServer key_server1 = new KVServer(100, 10);
+				KVServer key_server1 = new KVServer(2, 2);
 				SocketServer server1 = new SocketServer("localhost", 8080);
 				
 				server = server1;
@@ -54,6 +54,7 @@ public class PlayConsole {
 	}
 	
 	public static void main(String [] args){
+		Thread.currentThread().setName("PlayConsole");
 		ServerThread st = new ServerThread(System.out);
 		st.start();
 		
@@ -70,8 +71,9 @@ public class PlayConsole {
 				
 				String [] inputs = input.split(",");
 				
-				if (input.length() < 1 || input.length()>3){
+				if (inputs.length < 1 || inputs.length>3){
 					System.out.println("could not recognize ur command");
+					continue;
 				}
 				
 				String command = inputs[0];
@@ -93,6 +95,13 @@ public class PlayConsole {
 						continue;
 					}
 					kc.del(inputs[1]);
+					
+					
+				}else if(command.equals("dumpstore")){
+					System.out.println(PlayConsole.key_server.dumpStore());
+					
+				}else if(command.equals("dumpcache")){	
+					System.out.println(PlayConsole.key_server.dumpCache());
 					
 				//Extend so that it can accept more commands, such as dumpCache and cumpStore
 				}else{

@@ -151,4 +151,20 @@ public class KVServer implements KeyValueInterface,Debuggable {
 			AutoGrader.agKVServerDelFinished(key);
 		}
 	}
+	
+	public String dumpStore(){
+		try {
+			return this.dataStore.toXML();
+		} catch (KVException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public String dumpCache(){
+		return this.dataCache.toXML();
+
+	}
+	
 }
