@@ -8,6 +8,16 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 
 /**
+ * A console which lets u to play around proj3
+ * 
+ * If you're using mac/ubuntu/other unix/linux and wanna run from command line
+ * 1. go to cs162 directory and run:
+ *		"ls -r | grep -v Test | xargs javac"
+ *
+ * 2. go to src directory and run:
+ *		"java edu/berkeley/cs162/PlayConsole"
+ *
+ * If you're using windows, just click "run" in eclipse
  * @author amos0528
  *
  */
