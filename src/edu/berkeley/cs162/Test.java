@@ -34,7 +34,7 @@ public class Test implements Debuggable{
 	}*/
 	@org.junit.Test
 	public void test() throws Exception{
-		//testPut();
+		testPut();
 		testGet();
 		//testDoublePut();
 		//testGetKeyNotInStore();
