@@ -60,7 +60,6 @@ public class KVClient implements KeyValueInterface, Debuggable {
 	    Socket socket;
 	    try{
 	    	socket = new Socket(this.server, port);
-	    	DEBUG.debug("Successfully connected to host");
 	    	return socket;
 	    	
 	    //could not connect to the server/port tuple	
@@ -80,7 +79,6 @@ public class KVClient implements KeyValueInterface, Debuggable {
 	private void closeHost(Socket sock) throws KVException {
 		try {
 			sock.close();
-			DEBUG.debug("Successfully closed the connection");
 		} catch (IOException e) {
 			DEBUG.debug("cannot close "+this.server+" with port "+this.port);
 			e.printStackTrace();
@@ -213,7 +211,7 @@ public class KVClient implements KeyValueInterface, Debuggable {
 			DEBUG.debug("Get request failed. Error message from server: "+ response.getMessage());
 			return null;
 		}else{
-			DEBUG.debug("Get request succeeded");
+			DEBUG.debug("Get request succeeded. Value is "+response.getValue());
 			return response.getValue(); 
 		}
 		

@@ -26,12 +26,11 @@ public class PlayConsole {
 	public static SocketServer server = null;
 	public static KVServer key_server = null;	
 	
-	private static class ServerThread extends Thread{
+	private static class ServerThread extends Thread implements Debuggable{
 		PrintStream out = null;
-		public ServerThread(PrintStream out){
+		public ServerThread(){
 			super();
 			this.setName("ServerThread");
-			this.out = out;
 		}
 		
 		public void run(){
@@ -45,17 +44,17 @@ public class PlayConsole {
 				NetworkHandler handler = new KVClientHandler(key_server);
 				server.addHandler(handler);
 				server.connect();
-				out.println("server is ready");
+				DEBUG.debug("server is ready");
 				server.run();
 			}catch(Exception e){
-				out.println("socket is closed");
+				DEBUG.debug("socket is closed");
 			}
 		}	
 	}
 	
 	public static void main(String [] args){
 		Thread.currentThread().setName("PlayConsole");
-		ServerThread st = new ServerThread(System.out);
+		ServerThread st = new ServerThread();
 		st.start();
 		
 		KVClient kc = new KVClient("localhost", 8080);
