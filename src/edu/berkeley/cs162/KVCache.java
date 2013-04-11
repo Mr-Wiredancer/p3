@@ -84,17 +84,10 @@ public class KVCache implements KeyValueInterface, Debuggable {
 		DEBUG.debug("Cache receives a get request with key "+key);
         try{
 			//sanity check on key
-			if (key.length()>KVMessage.MAX_KEY_LENGTH){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-			}
-			if (key.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-			}
+        	CheckHelper.sanityCheckKey(key);
 		
 			int setId = this.getSetId(key);
 			String result = this.sets[setId].get(key);
-			DEBUG.debug("Cache returns result for key "+key+" : "+result);
-			// Must be called before returning
 			
 			return result;
         }finally{
@@ -102,6 +95,11 @@ public class KVCache implements KeyValueInterface, Debuggable {
         }
 	}
 	
+	/**
+	 * Called when a replacement happens
+	 * @param key
+	 * @param value
+	 */
 	public void replace(String key, String value){
 		this.sets[getSetId(key)].replace(key, value);
 	}
@@ -121,19 +119,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
 
 		DEBUG.debug("Cache receives a put request with key "+key+" and value "+value);
 		try{
-			//sanity check on key and value
-			if (key.length()>KVMessage.MAX_KEY_LENGTH){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-			}
-			if (value.length()>KVMessage.MAX_VALUE_LENGTH){
-				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
-			}
-			if (key.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-			}
-			if (value.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty value"));
-			}
+			CheckHelper.sanityCheckKeyValue(key, value);
 			
 			this.sets[this.getSetId(key)].put(key, value);
 		}finally{
@@ -154,17 +140,11 @@ public class KVCache implements KeyValueInterface, Debuggable {
 		
 		DEBUG.debug("Cache receives a del request with key "+key);
 		try{
-		//sanity check on key
-		if (key.length()>KVMessage.MAX_KEY_LENGTH){
-			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-		}
-		if (key.length()==0){
-			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-		}
-		
-		this.sets[this.getSetId(key)].del(key);
-		
-		// Must be called before returning
+			//sanity check on key
+			CheckHelper.sanityCheckKey(key);
+			
+			this.sets[this.getSetId(key)].del(key);
+	
 		}finally{
 			AutoGrader.agCacheDelFinished(key);
 		}
@@ -197,7 +177,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
 		try {
 			docBuilder = docFactory.newDocumentBuilder();
 		} catch (ParserConfigurationException e) {
-			//this should not happen
+			DEBUG.debug("this should not happen");
 			e.printStackTrace();
 		}
  
@@ -373,7 +353,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
     	 * @return value of the key; null if the key doesn't exist
     	 */
     	public String get(String key){
-    		readLock.lock();   		
+    		writeLock.lock();   		
     		try{
     			for(int i = 0; i < entries.size(); i++){
     				CacheEntry e = entries.get(i);
@@ -388,7 +368,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
     			}
     			return null;
     		}finally{
-        		readLock.unlock();	
+        		writeLock.unlock();	
     		}
     	}
     	

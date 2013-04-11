@@ -1,9 +1,39 @@
+/**
+ * Client component for generating load for the KeyValue store. 
+ * This is also used by the Master server to reach the slave nodes.
+ * 
+ * @author Mosharaf Chowdhury (http://www.mosharaf.com)
+ * @author Prashanth Mohan (http://www.cs.berkeley.edu/~prmohan)
+ * 
+ * Copyright (c) 2012, University of California at Berkeley
+ * All rights reserved.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *  * Neither the name of University of California, Berkeley nor the
+ *    names of its contributors may be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *    
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ *  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
+ *  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package edu.berkeley.cs162;
 
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.io.*;
-
 
 /**
  * This class is used to communicate with (appropriately marshalling and unmarshalling) 
@@ -48,12 +78,10 @@ public class KVClient implements KeyValueInterface, Debuggable {
 	}
 	
 	private void closeHost(Socket sock) throws KVException {
-	    // TODO: Implement Me!
 		try {
 			sock.close();
 			DEBUG.debug("Successfully closed the connection");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			DEBUG.debug("cannot close "+this.server+" with port "+this.port);
 			e.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the socket"));
@@ -61,20 +89,15 @@ public class KVClient implements KeyValueInterface, Debuggable {
 	}
 
 	/**
-	 * what does the return value mean? for unsuccessful update, should we raise an exception?
+	 * Send a put <key, value> request to server
+	 * @param key
+	 * @param value
+	 * @throws KVException
 	 */
 	public void put(String key, String value) throws KVException {
-	    // TODO: Implement Me!
 		
-		//check for length of key and value
-		if (key.length()>KVMessage.MAX_KEY_LENGTH){
-			DEBUG.debug("");
-			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-		}
-		if (value.length()>KVMessage.MAX_VALUE_LENGTH){
-			DEBUG.debug("");
-			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
-		}
+		//sanity check of key and value
+		CheckHelper.sanityCheckKeyValue(key, value);
 				
 		Socket sock = this.connectHost();
 		
@@ -84,7 +107,6 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		try {
 			out = sock.getOutputStream();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			DEBUG.debug("cannot open outputstream");
 			e1.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not send data"));
@@ -93,7 +115,6 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		try {
 			in = sock.getInputStream();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			DEBUG.debug("cannot open inputstream");
 			e1.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data"));
@@ -102,42 +123,43 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		KVMessage msg = new KVMessage(KVMessage.PUTTYPE);
 		msg.setKey(key);
 		msg.setValue(value);
-		
-		DEBUG.debug("the get request is: "+msg.toXML());
-		
+				
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
 		try {
 			sock.shutdownOutput();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			DEBUG.debug("could not close the outputstream");
 			e.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
+		
+		DEBUG.debug(String.format("Put request of <%s, %s> was sent, waiting for response", key, value));
 		
 		KVMessage response = new KVMessage(in);
 		
 		try {
 			in.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			DEBUG.debug("could not close the input stream");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
 		
 		this.closeHost(sock);
 	
-		DEBUG.debug("receved message: "+response.toXML());
 		if (!response.getMessage().equals("Success"))
-			throw new KVException (response);
+			DEBUG.debug("Put request failed. Error message from server: "+ response.getMessage());
+		else
+			DEBUG.debug("Put request succeeded");
+			
+		//TODO: should we throw KVException when server sends back an error message?
 	}
 
 	//what to return when unsuccessful? should we throw exception or return null?
 	public String get(String key) throws KVException {
-	    // TODO: Implement Me!
-		if (key.length()>KVMessage.MAX_KEY_LENGTH)
-			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Oversized key"));	
+		
+		//sanity check on key
+		CheckHelper.sanityCheckKey(key);
 		
 		Socket sock = this.connectHost();
 		
@@ -147,61 +169,59 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		try {
 			out = sock.getOutputStream();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("cannot open outputstream");
+			e1.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not send data"));
 		}
 		
 		try {
 			in = sock.getInputStream();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("cannot open inputstream");
+			e1.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data"));
 		}
 		
 		KVMessage msg = new KVMessage(KVMessage.GETTYPE);
 		msg.setKey(key);
-		DEBUG.debug(msg.toXML());
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
 		
 		try {
 			sock.shutdownOutput();
-			DEBUG.debug("successfully closed output stream");
 		} catch (IOException e) {
 			DEBUG.debug("could not close output stream");
+			e.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
 				
+		DEBUG.debug(String.format("Get request of <%s> was sent, waiting for response", key));
+		
 		KVMessage response = new KVMessage(in);
 		
-		DEBUG.debug("Sucessfully got response from server");
-		DEBUG.debug(response.toXML());
 		try {
 			in.close();
-			DEBUG.debug("successfully closed input stream");
 		} catch (IOException e) {
 			DEBUG.debug("cannot close input stream");
+			e.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
 		this.closeHost(sock);
 		
-		//
 		if (response.getMessage()!=null){
-			DEBUG.debug("get request has error");
-			DEBUG.debug(response.toXML());
+			DEBUG.debug("Get request failed. Error message from server: "+ response.getMessage());
 			return null;
 		}else{
-			DEBUG.debug("successful get");
+			DEBUG.debug("Get request succeeded");
 			return response.getValue(); 
 		}
+		
+		//TODO: should we throw KVException when server sends back an error message? or just return null?
 	}
 	
-	// what to do when delete fails?
 	public void del(String key) throws KVException {
-	    // TODO: Implement Me!
-		if (key.length()>KVMessage.MAX_KEY_LENGTH)
-			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Oversized key"));	
+		CheckHelper.sanityCheckKey(key);
 		
 		Socket sock = this.connectHost();
 		
@@ -210,21 +230,21 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		try {
 			out = sock.getOutputStream();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("Could not open outputstream");
+			e1.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not send data"));
 		}
 		
 		try {
 			in = sock.getInputStream();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("Could not open input stream");
+			e1.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data"));
 		}
 		
 		KVMessage msg = new KVMessage(KVMessage.DELTYPE);
 		msg.setKey(key);
-
-		DEBUG.debug("the del request is: "+msg.toXML());
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
@@ -232,56 +252,32 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		try {
 			sock.shutdownOutput();
 		} catch (IOException e) {
+			DEBUG.debug("could not close output stream");
+			e.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
 		
-		KVMessage response = new KVMessage(in);//we dont look at the response for now
+		DEBUG.debug(String.format("Del request of <%s> was sent, waiting for response", key));
+		
+		KVMessage response = new KVMessage(in);
 		
 		try {
 			in.close();
 		} catch (IOException e) {
+			DEBUG.debug("cannot close input stream");
+			e.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
 		
 		this.closeHost(sock);
-		
-		DEBUG.debug("received message: "+response.toXML());
-		
-		if (!response.getMessage().equals("Success"))
-			DEBUG.debug(response.toXML());
-	}	
 	
-
+		if (!response.getMessage().equals("Success"))
+			DEBUG.debug("Del request failed. Error message from server: "+ response.getMessage());
+		else
+			DEBUG.debug("Del request succeeded");
+		
+		//TODO: wut to do when del failed? throw KVException? 
+	}
 }
-/**
- * Client component for generating load for the KeyValue store. 
- * This is also used by the Master server to reach the slave nodes.
- * 
- * @author Mosharaf Chowdhury (http://www.mosharaf.com)
- * @author Prashanth Mohan (http://www.cs.berkeley.edu/~prmohan)
- * 
- * Copyright (c) 2012, University of California at Berkeley
- * All rights reserved.
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  * Neither the name of University of California, Berkeley nor the
- *    names of its contributors may be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *    
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- *  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
- *  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+
 
