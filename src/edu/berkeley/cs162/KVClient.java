@@ -145,9 +145,10 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		
 		this.closeHost(sock);
 	
-		if (!response.getMessage().equals("Success"))
+		if (!response.getMessage().equals("Success")){
 			DEBUG.debug("Put request failed. Error message from server: "+ response.getMessage());
-		else
+			throw new KVException(response);
+		}else
 			DEBUG.debug("Put request succeeded");
 			
 		//TODO: should we throw KVException when server sends back an error message?
@@ -209,7 +210,7 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		
 		if (response.getMessage()!=null){
 			DEBUG.debug("Get request failed. Error message from server: "+ response.getMessage());
-			return null;
+			throw new KVException(response);
 		}else{
 			DEBUG.debug("Get request succeeded. Value is "+response.getValue());
 			return response.getValue(); 
@@ -269,9 +270,10 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		
 		this.closeHost(sock);
 	
-		if (!response.getMessage().equals("Success"))
+		if (!response.getMessage().equals("Success")){
 			DEBUG.debug("Del request failed. Error message from server: "+ response.getMessage());
-		else
+			throw new KVException(response);
+		}else
 			DEBUG.debug("Del request succeeded");
 		
 		//TODO: wut to do when del failed? throw KVException? 
