@@ -3,16 +3,17 @@ package edu.berkeley.cs162;
 import java.util.LinkedList;
 import java.util.concurrent.locks.*;
 
-public class ThreadPool {
+public class ThreadPool implements Debuggable{
 	/**
 	 * Set of threads in the threadpool
 	 */
 	protected WorkerThread threads[] = null;
 	LinkedList<Runnable> jobQueue = new LinkedList<Runnable>();
 	private ReadWriteLock lock = new ReentrantReadWriteLock();
+	private Lock jobQueueLock = lock.writeLock();
 	
-	public Lock helperLock = new ReentrantLock();
-	public Condition jobQueueNotEmpty = helperLock.newCondition();
+	public Lock cvLock = new ReentrantLock();
+	public Condition jobQueueNotEmpty = cvLock.newCondition();
 	/**
 	 * Initialize the number of threads required in the threadpool. 
 	 * 
@@ -20,16 +21,22 @@ public class ThreadPool {
 	 */
 	public ThreadPool(int size)
 	{      
-	    // TODO: implement me
 		threads = new WorkerThread[size];
 		initializeThreads();
+	}
+	
+	public void cleanup(){
+		for (WorkerThread t : threads){
+			t.signalFinish();
+		}
 	}
 	
 	private void initializeThreads(){
 		for (int i = 0; i < threads.length; i++){
 			threads[i] = new WorkerThread(this);
 		}
-		System.out.println("there are "+threads.length+" threads");
+		
+		DEBUG.debug("there are "+threads.length+" threads");
 		for (WorkerThread w : this.threads){
 			w.start();
 		}
@@ -43,14 +50,15 @@ public class ThreadPool {
 	 */
 	public void addToQueue(Runnable r) throws InterruptedException
 	{
-	      // TODO: implement me
-		lock.writeLock().lock();	
+		jobQueueLock.lock();	
 		jobQueue.add(r);
-		lock.writeLock().unlock();
+		DEBUG.debug(r.toString());
+		//Test.jobQueue.add((KVClientHandler$ClientHandler(r)).getClient().getPort());
+		jobQueueLock.unlock();
 		
-		this.helperLock.lock();
+		cvLock.lock();
 		this.jobQueueNotEmpty.signal();
-		this.helperLock.unlock();
+		cvLock.unlock();
 	}
 	
 	/** 
@@ -58,23 +66,29 @@ public class ThreadPool {
 	 * @return A runnable task that has to be executed
 	 * @throws InterruptedException 
 	 */
-	public synchronized Runnable getJob() throws InterruptedException {
-	    lock.writeLock().lock();
-	    Runnable r = null;
-	    try{
-	    r = jobQueue.remove();
-	    }catch(Exception e){
-	    	
-	    }
-	    lock.writeLock().unlock();
-	    return r;
+	public Runnable getJob() throws InterruptedException {
+		while (true){
+			Runnable r = null;
+			jobQueueLock.lock();
+			if (!jobQueue.isEmpty())
+				r = jobQueue.removeFirst();
+			jobQueueLock.unlock();
+			
+			if (r==null){
+				cvLock.lock();
+				jobQueueNotEmpty.await();
+				cvLock.unlock();
+			}else{
+				return r;
+			}
+		}
 	}
 }
 
 /**
  * The worker threads that make up the thread pool.
  */
-class WorkerThread extends Thread {
+class WorkerThread extends Thread implements Debuggable {
 	/**
 	 * The constructor.
 	 * 
@@ -84,50 +98,35 @@ class WorkerThread extends Thread {
 	
 	private ThreadPool o;
 	
+	private boolean run = true;
+	
 	WorkerThread(ThreadPool o)
 	{
 		this.o = o;
 		this.setName("WorkerThread"+WorkerThread.workerThreadCounter++);
 	}
 
-	public void debug(String s){
-		System.out.println(Thread.currentThread().getName()+": "+s);
-	}
 	/**
 	 * Scan for and execute tasks.
 	 */
 	public void run()
 	{
-		debug("running");
-	      // TODO: implement me
-		Runnable r = null;
-		try {
-			r = o.getJob();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		while (true){
-			if (r !=null ){
-				debug("get a job");
-				r.run();
-			}else{
-				try {
-					o.helperLock.lock();
-					o.jobQueueNotEmpty.await();
-					o.helperLock.unlock();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+		DEBUG.debug("begins running");
+		while (run){
+			Runnable r = null;
 			try {
-				r = o.getJob();
+				r = o.getJob(); // would wait until it gets a job
+				DEBUG.debug("get a job");
+				r.run();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
+				//ignore this exception
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public void signalFinish(){
+		this.run = false;
 	}
 	
 }

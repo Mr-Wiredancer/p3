@@ -1,20 +1,25 @@
 package edu.berkeley.cs162;
 
 import static org.junit.Assert.*;
+import java.net.Socket;
 
 import java.io.IOException;
 import java.util.Scanner;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.logging.Logger;
 
 public class Test implements Debuggable{
 	public static int clientThreadCounter = 0;
-	public static boolean status;
-	public static String result;
+	public static HashMap<Integer, KVMessage> messageMap, respMap;
+	public static ThreadPool threadPool;
+	public static LinkedList<Integer> jobQueue;
+	public static LinkedList<KVMessage> request, resp;
 	
 	//@org.junit.Test
 	/*public void test() {
+
 		ServerThread sThread = new ServerThread();
 		sThread.start();
 		
@@ -34,22 +39,48 @@ public class Test implements Debuggable{
 	}*/
 	@org.junit.Test
 	public void test() throws Exception{
-		testPut();
+		//testPut();
 		testGet();
 		//testDoublePut();
 		//testGetKeyNotInStore();
 		//testDel();
 		//testPutandDel();
+
+		/*try{
+			sThread.join();
+			cThread.join();
+		}catch (Exception e){
+			
+		}*/
+
 	}
 	
 	public void init(){
-		this.status = true;
-		this.result = null;
+		threadPool = null;
+		jobQueue = new LinkedList<Integer>();
+		messageMap = new HashMap<Integer, KVMessage>();
+		respMap = new HashMap<Integer,KVMessage>();
 	}
 	
-	public void print(){
-		DEBUG.debug(this.status?"true":"false");
-		DEBUG.debug(this.result);
+	public void print() throws KVException{
+		if (jobQueue!=null){
+			DEBUG.debug(jobQueue.toString());
+		}
+		
+	}
+	
+	public void check() throws KVException{
+		request = new LinkedList<KVMessage>();
+		resp = new LinkedList<KVMessage>();
+		while (!jobQueue.isEmpty()){
+			int a = jobQueue.pop();
+			KVMessage req = Test.messageMap.get(a);
+			request.add(req);
+			KVMessage res= Test.respMap.get(a);
+			resp.add(res);
+			DEBUG.debug(req.toXML());
+			DEBUG.debug(res.toXML());
+		}
 		
 	}
 	
@@ -57,53 +88,37 @@ public class Test implements Debuggable{
     	init();
     	TestHelper t = new TestHelper("1,put,k1,v1");
 		Thread.currentThread().sleep(500);
-    	assertTrue(status);
+    	check();
     }
     
     public void testGet() throws Exception{
     	init();
     	TestHelper t = new TestHelper("1,put,k1,v1;2,get,k1");
-		Thread.currentThread().sleep(500);
-    	assertEquals(this.result, "v1");
+    	Thread.currentThread().sleep(500);
+    	check();
     }
     
     
     public void testDoublePut() throws Exception{
     	init();
     	TestHelper t = new TestHelper("1,put,k1,v1;2,put,k1,v2;3,get,k1");
-		Thread.currentThread().sleep(500);
-    	assertEquals(this.result, "v2");
     }
     
     public void testGetKeyNotInStore() throws Exception{
     	init();
-    	try{
+
     	TestHelper t = new TestHelper("1,put,k1,v1;2,get,k2");
-		Thread.currentThread().sleep(500);
-    	assertTrue(false); // shouldn't be reached
-    	}
-    	catch (Exception e){
-    		assertTrue(true);
-    	}
     }
     
     public void testDel() throws Exception{
     	init();
-    	try{
     	TestHelper t = new TestHelper("1,put,k1,v1;2,del,k1;3,get,k1");
-		Thread.currentThread().sleep(500);
-    	assertTrue(false); // shouldn't be reached
-    	}
-    	catch (Exception e){
-    		assertTrue(true);
-    	}
     }
 	
     public void testPutandDel() throws Exception{
     	init();
     	TestHelper t = new TestHelper("1,put,k1,v1;2,del,k1;3,put,k1,v2;4,get,k1");
-		Thread.currentThread().sleep(500);
-    	assertEquals(this.result,"v2");
+    	DEBUG.debug(Test.jobQueue.toString());
     }
     
     /* **
@@ -122,7 +137,8 @@ public class Test implements Debuggable{
 			DEBUG.debug("Binding Server:");
 			KVServer key_server = new KVServer(100, 10);
 			SocketServer server = new SocketServer("localhost", 8080);
-			NetworkHandler handler = new KVClientHandler(key_server);
+			NetworkHandler handler = new KVClientHandler(key_server, 10);
+			Test.threadPool = ((KVClientHandler)handler).getThreadPool();
 			server.addHandler(handler);
 			try{
 				server.connect();
@@ -157,22 +173,20 @@ public class Test implements Debuggable{
 			DEBUG.debug("starting client");
 			KVClient kc = new KVClient("localhost", 8080);
 			try{
+
 				if (this.type.equals("put")){
 					DEBUG.debug("putting " + this.key + " " + this.value);
-					boolean status = kc.put(this.key, this.value);
-					if (!status) Test.status = false; 
+					kc.put(this.key, this.value);
 				}else
 				if (this.type.equals("get")){
 					DEBUG.debug("getting " + this.key );
 					String result = kc.get(this.key);
-					Test.result = result;
 				}else
 				if (this.type.equals("del")){
 					DEBUG.debug("deleting " + this.key );
 					kc.del(this.key);
 				}else 
 					throw new Exception("unknown type");
-
 			}catch(Exception e){
 				DEBUG.debug("error");
 				e.printStackTrace();

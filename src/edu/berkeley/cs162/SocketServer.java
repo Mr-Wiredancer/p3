@@ -29,7 +29,6 @@ public class SocketServer implements Debuggable{
 	 * @throws IOException if there is a network error (for instance if the socket is inadvertently closed) 
 	 */
 	public void run() throws IOException {
-	      // TODO: implement me
 	    while(true){
 	      Socket s = server.accept();
 	      DEBUG.debug("accepted a socket");
@@ -49,13 +48,13 @@ public class SocketServer implements Debuggable{
 	 * Stop the ServerSocket
 	 */
 	public void stop() {
-	      // TODO: implement me
+		((KVClientHandler)this.handler).cleanup();
+		
 		this.finalize();
 
 	}
 	
 	private void closeSocket() {
-	     // TODO: implement me
 	    try{
 	      this.server.close();
 	    }catch(IOException e){

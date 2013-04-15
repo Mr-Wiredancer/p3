@@ -12,7 +12,7 @@ import java.io.*;
  * @param <K> Java Generic type for the Key
  * @param <V> Java Generic type for the Value
  */
-public class KVClient implements KeyValueInterface {
+public class KVClient implements KeyValueInterface, Debuggable {
 
 	private String server = null;
 	private int port = 0;
@@ -27,18 +27,22 @@ public class KVClient implements KeyValueInterface {
 	}
 	
 	private Socket connectHost() throws KVException {
-	    // TODO: Implement Me!  
 	    Socket socket;
 	    try{
 	    	socket = new Socket(this.server, port);
+	    	DEBUG.debug("Successfully connected to host");
 	    	return socket;
 	    	
 	    //could not connect to the server/port tuple	
 	    }catch (UnknownHostException e){
+	    	DEBUG.debug("cannot connect to "+this.server+" with port "+this.port);
+	    	e.printStackTrace();
 	    	throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not connect"));
 	    
 	    //could not create the socket
 	    }catch (IOException e){
+	    	DEBUG.debug("cannot create a socket with "+this.server+" with port "+this.port);
+	    	e.printStackTrace();
 	    	throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not create socket"));
 		}
 	}
@@ -47,8 +51,11 @@ public class KVClient implements KeyValueInterface {
 	    // TODO: Implement Me!
 		try {
 			sock.close();
+			DEBUG.debug("Successfully closed the connection");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			DEBUG.debug("cannot close "+this.server+" with port "+this.port);
+			e.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the socket"));
 		}
 	}
@@ -56,14 +63,16 @@ public class KVClient implements KeyValueInterface {
 	/**
 	 * what does the return value mean? for unsuccessful update, should we raise an exception?
 	 */
-	public boolean put(String key, String value) throws KVException {
+	public void put(String key, String value) throws KVException {
 	    // TODO: Implement Me!
 		
 		//check for length of key and value
-		if (key.length()>KVMessage.MAX_KEY_LENGTH)
+		if (key.length()>KVMessage.MAX_KEY_LENGTH){
+			DEBUG.debug("");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-		
+		}
 		if (value.length()>KVMessage.MAX_VALUE_LENGTH){
+			DEBUG.debug("");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
 		}
 				
@@ -76,6 +85,8 @@ public class KVClient implements KeyValueInterface {
 			out = sock.getOutputStream();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
+			DEBUG.debug("cannot open outputstream");
+			e1.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not send data"));
 		}
 		
@@ -83,6 +94,8 @@ public class KVClient implements KeyValueInterface {
 			in = sock.getInputStream();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
+			DEBUG.debug("cannot open inputstream");
+			e1.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data"));
 		}
 		
@@ -90,13 +103,16 @@ public class KVClient implements KeyValueInterface {
 		msg.setKey(key);
 		msg.setValue(value);
 		
+		DEBUG.debug("the get request is: "+msg.toXML());
+		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
-		debug("the put request is: "+msg.toXML());
 		try {
-			out.close();
+			sock.shutdownOutput();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			DEBUG.debug("could not close the outputstream");
+			e.printStackTrace();
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
 		
@@ -106,18 +122,17 @@ public class KVClient implements KeyValueInterface {
 			in.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			DEBUG.debug("could not close the input stream");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
 		
 		this.closeHost(sock);
-		
-		//assume we return true if success and false otherwise
-		if ( response.getMessage()=="Success")
-			return true;
-		else
-			return false;
 	
-		
+		DEBUG.debug("receved message: "+response.toXML());
+		if (!response.getMessage().equals("Success"))
+			throw new KVException (response);
+		Test.respMap.put(sock.getLocalPort(), response);
+		Test.messageMap.put(sock.getLocalPort(),msg);
 	}
 
 	//what to return when unsuccessful? should we throw exception or return null?
@@ -147,34 +162,43 @@ public class KVClient implements KeyValueInterface {
 		
 		KVMessage msg = new KVMessage(KVMessage.GETTYPE);
 		msg.setKey(key);
+		DEBUG.debug(msg.toXML());
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
-		debug("the get request is: "+msg.toXML());
-
+		
 		try {
-			out.close();
+			sock.shutdownOutput();
+			DEBUG.debug("successfully closed output stream");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("could not close output stream");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
-		
+				
 		KVMessage response = new KVMessage(in);
 		
+		DEBUG.debug("Sucessfully got response from server");
+		DEBUG.debug(response.toXML());
 		try {
 			in.close();
+			DEBUG.debug("successfully closed input stream");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			DEBUG.debug("cannot close input stream");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
 		this.closeHost(sock);
 		
 		//
-		if (response.getMessage()!=null)
+		Test.respMap.put(sock.getLocalPort(), response);
+		Test.messageMap.put(sock.getLocalPort(),msg);
+		if (response.getMessage()!=null){
+			DEBUG.debug("get request has error");
+			DEBUG.debug(response.toXML());
 			return null;
-		else
+		}else{
+			DEBUG.debug("successful get");
 			return response.getValue(); 
-		
+		}
 	}
 	
 	// what to do when delete fails?
@@ -203,15 +227,15 @@ public class KVClient implements KeyValueInterface {
 		
 		KVMessage msg = new KVMessage(KVMessage.DELTYPE);
 		msg.setKey(key);
+
+		DEBUG.debug("the del request is: "+msg.toXML());
 		
 		PrintWriter writer = new PrintWriter(out, true);
 		writer.println(msg.toXML());
-		debug("the del request is: "+msg.toXML());
 
 		try {
-			out.close();
+			sock.shutdownOutput();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the output stream of the socket"));
 		}
 		
@@ -220,16 +244,20 @@ public class KVClient implements KeyValueInterface {
 		try {
 			in.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Unknown Error: Could not close the input stream of the socket"));
 		}
 		
 		this.closeHost(sock);
+		
+		DEBUG.debug("received message: "+response.toXML());
+		
+		if (!response.getMessage().equals("Success"))
+			DEBUG.debug(response.toXML());
+		Test.respMap.put(sock.getLocalPort(), response);
+		Test.messageMap.put(sock.getLocalPort(),msg);
 	}	
 	
-	public void debug(String s){
-		System.out.println(Thread.currentThread().getName()+": "+s);
-	}
+
 }
 /**
  * Client component for generating load for the KeyValue store. 

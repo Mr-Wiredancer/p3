@@ -5,3 +5,11 @@
 2. kvmessage and testcases branches are can be worked on independently. 
 
 3. to test based on other's work. merge your branch to their branch instead of merging to master branch
+
+
+
+
+test interface specification:
+
+Input: ["0,put,3,7", "1,get,3", "0,put,3,8", "2,get,3"]
+Behavior: Create 3(above case) clients and send the corresponding requests in the indicated order.

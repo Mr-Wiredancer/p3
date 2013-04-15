@@ -1,6 +1,9 @@
 package edu.berkeley.cs162;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
@@ -25,55 +28,154 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 		threadpool = new ThreadPool(connections);	
 	}
 	
-
+	public void cleanup(){
+		threadpool.cleanup();
+	}
+    
+	public ThreadPool getThreadPool(){
+		return this.threadpool;
+	}
+	
+			
+	
 	private class ClientHandler implements Runnable {
 		private KVServer kvServer = null;
 		private Socket client = null;
 		
-		public void debug(String s){
-			System.out.println(Thread.currentThread().getName()+": "+s);
+		public Socket getClient(){
+			return this.client;
+		}
+			
+		private void handlePut(KVMessage msg){
+			try {
+				this.kvServer.put(msg.getKey(), msg.getValue());
+			} catch (KVException e) {
+				try {
+					e.getMsg().sendMessage(this.client);
+				} catch (KVException e1) {
+					DEBUG.debug("error happens when trying to send back message");
+					e1.printStackTrace();
+				}
+				return;
+			}
+			
+			try{
+				KVMessage successMsg = new KVMessage(KVMessage.RESPTYPE, "Success");
+				successMsg.sendMessage(this.client);
+			}catch(KVException e){
+				DEBUG.debug("error happens when trying to send back message");
+				e.printStackTrace();
+			}
+		}
+		
+		private void handleDel(KVMessage msg){
+			try{
+				this.kvServer.del(msg.getKey());
+			}catch (KVException e){
+				try {
+					e.getMsg().sendMessage(this.client);
+				} catch (KVException e1) {
+					DEBUG.debug("error happens when trying to send back message");
+					e1.printStackTrace();
+				}
+				return;			}
+			
+			try{
+				KVMessage successMsg = new KVMessage(KVMessage.RESPTYPE, "Success");
+				successMsg.sendMessage(this.client);
+			}catch(KVException e){
+				DEBUG.debug("error happens when trying to send back message");
+				e.printStackTrace();
+			}
+		}
+		
+		private void handleGet(KVMessage msg){
+			String val = null;
+			try {
+				val = this.kvServer.get(msg.getKey());
+			} catch (KVException e) {
+				try {
+					e.getMsg().sendMessage(this.client);
+				} catch (KVException e1) {
+					DEBUG.debug("error happens when trying to send back message");
+					e1.printStackTrace();
+				}
+				return;
+			}
+		
+			try{
+				// val should not be null. kvserver.get return non-null string or KVException.
+				if (val!=null){
+					//successful get
+					KVMessage successMsg = null;
+					try {
+						successMsg = new KVMessage(KVMessage.RESPTYPE);
+					} catch (KVException e) {
+						//silence this exception
+						DEBUG.debug("this error should not happen");
+						e.printStackTrace();
+					}
+					successMsg.setKey(msg.getKey());
+					successMsg.setValue(val);
+					successMsg.sendMessage(this.client);
+				}else{
+					DEBUG.debug("this should not be printed");
+				}
+			}catch (KVException e){
+				DEBUG.debug("error happens when trying to send back message");
+				e.printStackTrace();
+			}
 		}
 		
 		@Override
 		public void run() {
 		     try {
 		    	 
-				KVMessage msg = new KVMessage(client.getInputStream());
+		    	InputStream in = client.getInputStream();
+		    	 
+				KVMessage msg = new KVMessage(new KVMessage.NoCloseInputStream(in));
 				
-				debug("the job is: "+ msg.toXML());
+				//at this point, the msg is a valid KVMessage
+				DEBUG.debug("the job is: "+ msg.toXML());
 				//get request
-				if ( msg.getMsgType()==KVMessage.GETTYPE){
-					String val = this.kvServer.get(msg.getKey());
-					if (val!=null){
-						//successful get
-						//TODO send back the successful meesage
-					}else{
-						//failed get
-						//TODO send back the failed message
-					}
+				if ( msg.getMsgType().equals(KVMessage.GETTYPE)){
+					handleGet(msg);
 				
 				//put request	
-				}else if ( msg.getMsgType()==KVMessage.PUTTYPE){
-					boolean success = this.kvServer.put(msg.getKey(), msg.getValue());
-					if (success){
-						//TODO send back the successful message
-					}else{
-						//TODO send back the failed message
-					}
+				}else if ( msg.getMsgType().equals(KVMessage.PUTTYPE)){
+					handlePut(msg);
 					
 				//del request	
-				}else if (msg.getMsgType()==KVMessage.DELTYPE){
-					this.kvServer.del(msg.getKey());
-					
+				}else if (msg.getMsgType().equals(KVMessage.DELTYPE)){
+					handleDel(msg);
+			
+				//resp request
+				}else{
+					try {
+						new KVMessage(KVMessage.RESPTYPE, "Unknown Error: server received a response message").sendMessage(this.client);
+					} catch (KVException e1) {
+						DEBUG.debug("error happens when trying to send back message");
+						e1.printStackTrace();
+					}
 				}
 				
-				
 			} catch (KVException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//exception when getting KVMessage from the socket's input stream
+				try {
+					e.getMsg().sendMessage(this.client);
+				} catch (KVException e1) {
+					DEBUG.debug("error happens when trying to send back message");
+					e1.printStackTrace();
+				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				DEBUG.debug("could not receive data");
 				e.printStackTrace();
+				try {
+					new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data").sendMessage(this.client);
+				} catch (KVException e1) {
+					DEBUG.debug("error happens when trying to send back message");
+					e1.printStackTrace();
+				}
 			}
 		}
 		
@@ -91,7 +193,9 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 		DEBUG.debug("creating a new job");
 		Runnable r = new ClientHandler(kv_Server, client);
 		try {
+			Test.jobQueue.add(client.getPort());
 			threadpool.addToQueue(r);
+			DEBUG.debug("added to queue");
 		} catch (InterruptedException e) {
 			// Ignore this error
 			return;

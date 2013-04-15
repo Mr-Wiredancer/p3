@@ -30,10 +30,19 @@
  */
 package edu.berkeley.cs162;
 
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.*;
 
 
 /**
@@ -41,7 +50,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
  * Each set has a maximum number of elements (MAX_ELEMS_PER_SET).
  * If a set is full and another entry is added, an entry is dropped based on the eviction policy.
  */
-public class KVCache implements KeyValueInterface {	
+public class KVCache implements KeyValueInterface, Debuggable {	
 	private int numSets = 100;
 	private int maxElemsPerSet = 10;
 		
@@ -52,8 +61,13 @@ public class KVCache implements KeyValueInterface {
 	 */
 	public KVCache(int numSets, int maxElemsPerSet) {
 		this.numSets = numSets;
-		this.maxElemsPerSet = maxElemsPerSet;     
-		// TODO: Implement Me!
+		this.maxElemsPerSet = maxElemsPerSet;    
+		this.sets = new CacheSet[numSets];
+		
+		for (int i = 0; i < numSets; i++){
+			this.sets[i] = new CacheSet(maxElemsPerSet);
+		}
+		
 	}
 
 	/**
@@ -62,23 +76,36 @@ public class KVCache implements KeyValueInterface {
 	 * @param key the key whose associated value is to be returned.
 	 * @return the value associated to this key, or null if no value with this key exists in the cache.
 	 */
-	public String get(String key) {
+	public String get(String key) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agCacheGetStarted(key);
 		AutoGrader.agCacheGetDelay();
-        
-		// TODO: Implement Me!
-		int setId = this.getSetId(key);
-		String result = this.sets[setId].get(key);
-		// Must be called before returning
-		AutoGrader.agCacheGetFinished(key);
-		return result;
+		
+		DEBUG.debug("Cache receives a get request with key "+key);
+        try{
+			//sanity check on key
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+			}
+		
+			int setId = this.getSetId(key);
+			String result = this.sets[setId].get(key);
+			DEBUG.debug("Cache returns result for key "+key+" : "+result);
+			// Must be called before returning
+			
+			return result;
+        }finally{
+        	AutoGrader.agCacheGetFinished(key);
+        }
 	}
 	
-	public void update(String key, String value){
-		this.sets[getSetId(key)].update(key, value);
+	public void replace(String key, String value){
+		this.sets[getSetId(key)].replace(key, value);
 	}
-
+	
 	/**
 	 * Adds an entry to this cache.
 	 * If an entry with the specified key already exists in the cache, it is replaced by the new entry.
@@ -86,34 +113,61 @@ public class KVCache implements KeyValueInterface {
 	 * Assumes the corresponding set has already been locked for writing.
 	 * @param key	the key with which the specified value is to be associated.
 	 * @param value	a value to be associated with the specified key.
-	 * @return true is something has been overwritten 
 	 */
-	public boolean put(String key, String value) {
+	public void put(String key, String value)throws KVException {
 		// Must be called before anything else
 		AutoGrader.agCachePutStarted(key, value);
 		AutoGrader.agCachePutDelay();
 
-		// TODO: Implement Me!
-		
-		// Must be called before returning
-		AutoGrader.agCachePutFinished(key, value);
-		return false;
+		DEBUG.debug("Cache receives a put request with key "+key+" and value "+value);
+		try{
+			//sanity check on key and value
+			if (key.length()>KVMessage.MAX_KEY_LENGTH){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+			}
+			if (value.length()>KVMessage.MAX_VALUE_LENGTH){
+				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
+			}
+			if (key.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+			}
+			if (value.length()==0){
+				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty value"));
+			}
+			
+			this.sets[this.getSetId(key)].put(key, value);
+		}finally{
+			AutoGrader.agCachePutFinished(key, value);
+		}
 	}
 
 	/**
 	 * Removes an entry from this cache.
 	 * Assumes the corresponding set has already been locked for writing.
 	 * @param key	the key with which the specified value is to be associated.
+	 * @throws KVException 
 	 */
-	public void del (String key) {
+	public void del (String key) throws KVException {
 		// Must be called before anything else
 		AutoGrader.agCacheGetStarted(key);
 		AutoGrader.agCacheDelDelay();
 		
-		// TODO: Implement Me!
+		DEBUG.debug("Cache receives a del request with key "+key);
+		try{
+		//sanity check on key
+		if (key.length()>KVMessage.MAX_KEY_LENGTH){
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
+		}
+		if (key.length()==0){
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
+		}
+		
+		this.sets[this.getSetId(key)].del(key);
 		
 		// Must be called before returning
-		AutoGrader.agCacheDelFinished(key);
+		}finally{
+			AutoGrader.agCacheDelFinished(key);
+		}
 	}
 	
 	/**
@@ -121,8 +175,7 @@ public class KVCache implements KeyValueInterface {
 	 * @return	the write lock of the set that contains key.
 	 */
 	public WriteLock getWriteLock(String key) {
-	    // TODO: Implement Me!
-	    return null;
+	    return this.sets[this.getSetId(key)].getWriteLock();
 	}
 	
 	/**
@@ -133,16 +186,102 @@ public class KVCache implements KeyValueInterface {
 	private int getSetId(String key) {
 		return Math.abs(key.hashCode()) % numSets;
 	}
-	
+
+	/**
+	 * output the cache's content as XML
+	 * @return XML representation of cache
+	 */
     public String toXML() {
-        // TODO: Implement Me!
-        return null;
+    	DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = null;
+		try {
+			docBuilder = docFactory.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			//this should not happen
+			e.printStackTrace();
+		}
+ 
+		// root element
+		Document doc = docBuilder.newDocument();
+		Element rootElement = doc.createElement("KVCache");
+		doc.setXmlStandalone(true);
+		doc.appendChild(rootElement);
+		
+		for (int i = 0; i<this.numSets; i++){
+			//add a set element
+			CacheSet set = this.sets[i];
+			
+			Element setElement = doc.createElement("Set");
+			setElement.setAttribute("Id", ""+i);
+			
+			//add the existent entries in a set
+			for (int entryIndex = 0; entryIndex < set.entries.size(); entryIndex++){
+				CacheEntry e = set.entries.get(entryIndex);
+				
+				Element entryElement = doc.createElement("CacheEntry");
+				boolean isReferenced = e.isReferred();
+				entryElement.setAttribute("isReferenced", ""+isReferenced);
+				entryElement.setAttribute("isValid", ""+true);
+				
+				Element keyElement = doc.createElement("Key");
+				keyElement.appendChild(doc.createTextNode(e.getKey()));
+				
+				Element valueElement = doc.createElement("Value");
+				valueElement.appendChild(doc.createTextNode(e.getValue()));
+				
+				entryElement.appendChild(keyElement);
+				entryElement.appendChild(valueElement);
+				
+				setElement.appendChild(entryElement);
+			}
+			
+			for (int j = set.entries.size(); j < this.maxElemsPerSet; j++){
+				Element entryElement = doc.createElement("CacheEntry");
+				entryElement.setAttribute("isReferenced", ""+false);
+				entryElement.setAttribute("isValid", ""+false);
+				
+				Element keyElement = doc.createElement("Key");
+				Element valueElement = doc.createElement("Value");
+
+				entryElement.appendChild(keyElement);
+				entryElement.appendChild(valueElement);
+				
+				setElement.appendChild(entryElement);
+			}
+			
+			rootElement.appendChild(setElement);
+		}
+		
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer = null;
+		try {
+			transformer = transformerFactory.newTransformer();
+		} catch (TransformerConfigurationException e) {
+			DEBUG.debug("this should not happen");
+			e.printStackTrace();
+		}
+		
+		StringWriter writer = new StringWriter();
+	
+		DOMSource  source= new DOMSource(doc);
+		StreamResult result = new StreamResult(writer);
+ 
+		
+		try {
+			transformer.transform(source, result);
+		} catch (TransformerException e) {
+			DEBUG.debug("this should not happen");
+			e.printStackTrace();
+		}
+		
+		String xml = writer.toString();
+		
+        return xml;
     }
     
     private class CacheEntry{
     	private String value;
-    	private boolean dirty = false;
-    	private boolean missed = false;
+    	private boolean isReferred = false;
     	private String key;
     	
     	public CacheEntry(String key, String val){
@@ -150,68 +289,168 @@ public class KVCache implements KeyValueInterface {
     		this.key = key;
     	}
     	
-    	public void miss(){
-    		this.missed = true;
+    	public void refer(){
+    		this.isReferred = true;
     	}
     	
-    	public boolean isDirty(){
-    		return this.dirty;
+    	public boolean isReferred(){
+    		return this.isReferred;
     	}
     	
-    	public boolean isLastChance(){
-    		return this.missed;
+    	public boolean shouldBeReplaced(){
+    		return !isReferred();
     	}
     
     	public String getKey(){
     		return this.key;
     	}
     	
+    	public void miss(){
+    		this.isReferred = false;
+    	}
+    	
     	public String getValue(){
     		return this.value;
+    	}
+    	
+    	public void setValue(String val){
+    		this.value = val;
     	}
     }
     
     private class CacheSet{
-    	private WriteLock lock = new ReentrantReadWriteLock().writeLock();
+    	private ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    	private WriteLock writeLock;
+    	private ReadLock readLock;
     	private final int MAX_NUM_ELEMENT;
-    	private LinkedList<CacheEntry> set = new LinkedList<CacheEntry>();
+    	private LinkedList<CacheEntry> entries = new LinkedList<CacheEntry>();
+    	private int referredCount = 0;
     	
     	public CacheSet(int maxElementPerSet){
     		this.MAX_NUM_ELEMENT = maxElementPerSet;
+    		readLock = readWriteLock.readLock();
+    		writeLock = readWriteLock.writeLock();
+    	}
+    	
+    	public WriteLock getWriteLock(){
+    		return this.writeLock;
     	}
     	
     	/**
-    	 * Linear search of the requested key.
+    	 * sequential search for the key.
+    	 * @param key
+    	 * @param value
+    	 * @return true if a replacement is needed (not if an overwritting happens)
+    	 */
+    	public void put(String key, String value){
+    		writeLock.lock();
+    		
+    		try{
+    			for (int i = 0; i < entries.size(); i++){
+    				CacheEntry e = entries.get(i);
+    				String k = e.getKey();
+    				if (k.equals(key)){
+   					    e.setValue(value);
+   					    return;
+    				}
+    			}		
+    			//the key is not in the cache. Needs replacement
+    			this.replaceHelper(key, value);
+    		}finally{
+    			writeLock.unlock();
+    		}
+    	}
+    	
+    	public void replace(String key, String value){
+    		writeLock.lock();
+    		this.replaceHelper(key, value);
+    		writeLock.unlock();
+    	}
+    	
+    	/**
+    	 * Linear search of the requested key.If they key is found, said the reference b
     	 * @param key
     	 * @return value of the key; null if the key doesn't exist
     	 */
-    	public synchronized String get(String key){
-    		for ( CacheEntry e : this.set){
-    			if ( e.getKey() == key ){
-    				return e.getValue();
+    	public String get(String key){
+    		readLock.lock();   		
+    		try{
+    			for(int i = 0; i < entries.size(); i++){
+    				CacheEntry e = entries.get(i);
+    				String k = e.getKey();
+    				if (k.equals(key)){
+    					if (!e.isReferred()){
+    						this.referredCount++;	
+    						e.refer();
+    					}
+    					return e.getValue();
+    				}
     			}
+    			return null;
+    		}finally{
+        		readLock.unlock();	
     		}
-    		return null;
     	}
     	
     	/**
-    	 * Called when the requested key is not in the cache set. <key, value> is retreived from KVStore.
+    	 * sequential serach for the key. If the key exists, remove the entry. Also decrements the referredCount if the entry's isReffered bit is set.
+    	 * @param key
+    	 */
+    	public void del(String key){
+    		writeLock.lock();
+    		try{
+    			for (int i = 0; i < entries.size(); i++){
+    				CacheEntry e = entries.get(i);
+    				String k = e.getKey();
+    				if (k.equals(key)){
+    					if (e.isReferred()){
+    						this.referredCount--;
+    					}
+						entries.remove(i);
+						return;
+    				}
+    			}
+    		}finally{
+    			writeLock.unlock();
+    		}
+    	}
+    	
+    	/**
+    	 * Called when a replacement is needed. <key, value> is retreived from KVStore.
+    	 * Assume writeLock is held by currentThread. And caller should handle the unlocking of writeLock
     	 * @param key 
     	 * @param value
     	 */
-    	public synchronized void update(String key, String value){
-    		if (this.set.size() < this.MAX_NUM_ELEMENT-1){
-    			this.set.addFirst(new CacheEntry(key, value));
-    			return;
-    		}
-
-    		CacheEntry headEntry = this.set.removeFirst();
-    		if ( headEntry.isLastChance() ){
-    			this.set.addFirst(new CacheEntry(key, value));
-    		}else{
-    			headEntry.miss();
-    			this.set.add(headEntry);
-    		}
+    	private void replaceHelper(String key, String value){    		
+			assert(writeLock.isHeldByCurrentThread());
+			
+			//set is empty or not null yet
+			if (entries.isEmpty() || (entries.size() < this.MAX_NUM_ELEMENT)){
+				entries.add(new CacheEntry(key, value));
+				return;
+			}
+			
+			//all entry's isRefferred is false
+			if (this.referredCount==this.MAX_NUM_ELEMENT){
+				this.referredCount--;
+				entries.add(new CacheEntry(key, value));
+				return;
+			}
+			
+			while(true){   								
+				CacheEntry e = entries.removeFirst();
+ 	
+				//isReffered is false
+				if (e.shouldBeReplaced()){
+					entries.add(new CacheEntry(key, value));
+					return;
+				}
+				
+				//set the firs element's isReffered to false and remove it the the end of the queue
+				e.miss();
+				this.referredCount--;
+				entries.addLast(e);
+			}
     	}
     }
 }
