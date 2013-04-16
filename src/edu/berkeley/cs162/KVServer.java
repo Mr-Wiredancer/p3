@@ -65,22 +65,9 @@ public class KVServer implements KeyValueInterface,Debuggable {
 		// Must be called before anything else
 		AutoGrader.agKVServerPutStarted(key, value);
 	
-		try{
-			DEBUG.debug(String.format("requestd to put <%s, %s> in the store", key, value));
-			
+		try{			
 			//sanity check on key and value
-			if (key.length()>KVMessage.MAX_KEY_LENGTH){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-			}
-			if (value.length()>KVMessage.MAX_VALUE_LENGTH){
-				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
-			}
-			if (key.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-			}
-			if (value.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty value"));
-			}
+			CheckHelper.sanityCheckKeyValue(key, value);
 			
 			this.dataCache.put(key, value);
 			this.dataStore.put(key, value);
@@ -101,12 +88,7 @@ public class KVServer implements KeyValueInterface,Debuggable {
 		
 		try{
 			//sanity check on key
-			if (key.length()>KVMessage.MAX_KEY_LENGTH){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-			}
-			if (key.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-			}
+			CheckHelper.sanityCheckKey(key);
 			
 			//try to get the value in cache
 			String cacheValue = this.dataCache.get(key);
@@ -136,35 +118,35 @@ public class KVServer implements KeyValueInterface,Debuggable {
 
 		try{
 			//sanity check on key
-			if (key.length()>KVMessage.MAX_KEY_LENGTH){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-			}
-			if (key.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-			}
+			CheckHelper.sanityCheckKey(key);
 			
 			this.dataCache.del(key);
 			this.dataStore.del(key); //will throw KVException if is not in  
 		
-		// Must be called before returning
 		}finally{
 			AutoGrader.agKVServerDelFinished(key);
 		}
 	}
 	
+	/**
+	 * Only for testing
+	 * @return XML representation of store
+	 */
 	public String dumpStore(){
 		try {
 			return this.dataStore.toXML();
 		} catch (KVException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
 	}
 
+	/**
+	 * Only for testing
+	 * @return XML representation of cache
+	 */
 	public String dumpCache(){
 		return this.dataCache.toXML();
-
 	}
 	
 }

@@ -37,14 +37,16 @@ public class Test implements Debuggable{
 		ClientThread cThread2 = new ClientThread();
 		cThread2.start();
 	}*/
+	
 	@org.junit.Test
 	public void test() throws Exception{
-		//testPut();
+		testPut();
 		testGet();
-		//testDoublePut();
-		//testGetKeyNotInStore();
-		//testDel();
-		//testPutandDel();
+		testDoublePut();
+		testGetKeyNotInStore();
+		testDel();
+		testPutandDel();
+		pressuretest();
 
 		/*try{
 			sThread.join();
@@ -80,6 +82,22 @@ public class Test implements Debuggable{
 			resp.add(res);
 			DEBUG.debug(req.toXML());
 			DEBUG.debug(res.toXML());
+			if (req.getMsgType().equals(KVMessage.PUTTYPE)){
+				assertTrue(res.getMessage().equals("Success"));
+			}
+			if (req.getMsgType().equals(KVMessage.DELTYPE)){
+				assertTrue(res.getMessage().equals("Success")|res.getMessage().equals("Does not exist"));
+			}
+			if (req.getMsgType().equals(KVMessage.GETTYPE)){
+				boolean t1 = false;
+				boolean t2 = false;
+				if (res.getKey()!=null)
+					t1 = res.getKey().equals(req.getKey());
+				if (res.getMessage()!=null)
+					t2 = res.getMessage().equals("Does not exist");
+				assertTrue(t1|t2);
+			}
+			
 		}
 		
 	}
@@ -102,25 +120,50 @@ public class Test implements Debuggable{
     public void testDoublePut() throws Exception{
     	init();
     	TestHelper t = new TestHelper("1,put,k1,v1;2,put,k1,v2;3,get,k1");
+    	Thread.currentThread().sleep(500);
+    	check();
     }
     
     public void testGetKeyNotInStore() throws Exception{
     	init();
 
     	TestHelper t = new TestHelper("1,put,k1,v1;2,get,k2");
+    	Thread.currentThread().sleep(500);
+    	check();
     }
     
     public void testDel() throws Exception{
     	init();
     	TestHelper t = new TestHelper("1,put,k1,v1;2,del,k1;3,get,k1");
+    	Thread.currentThread().sleep(500);
+    	check();
+    	DEBUG.debug(resp.toString());
     }
 	
     public void testPutandDel() throws Exception{
     	init();
     	TestHelper t = new TestHelper("1,put,k1,v1;2,del,k1;3,put,k1,v2;4,get,k1");
-    	DEBUG.debug(Test.jobQueue.toString());
-    }
+    	Thread.currentThread().sleep(500);
+    	check();    }
     
+    public void pressuretest() throws Exception{
+    	init();
+    	String puts = "";
+    	String gets = "";
+    	String dels = "";
+    	int n= 100;
+    	for (int i=1;i<=n;i++){
+    		puts = puts + i + ",put,k"+i+",v"+i+";";
+    		gets = gets + (i+n) + ",get,k"+i+";";
+    		dels = dels + (i+2*n) + ",del,k"+i+";";
+    	}
+    	DEBUG.debug(puts+gets+dels);
+    	TestHelper t = new TestHelper(puts+gets+dels);
+    	Thread.currentThread().sleep(2000);
+    	check();
+    	DEBUG.debug("size is "+resp.size());
+    	
+    }
     /* **
 	 * The thread that runs KVServer codes
 	 * @author JL

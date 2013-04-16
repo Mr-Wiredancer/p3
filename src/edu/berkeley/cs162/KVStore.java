@@ -79,22 +79,12 @@ public class KVStore implements KeyValueInterface, Debuggable {
 	public synchronized void put(String key, String value) throws KVException {
 		AutoGrader.agStorePutStarted(key, value);
 		
+		DEBUG.debug("Store receives a put request of key "+key+" and value "+value);
 		try {
 			putDelay();
 			
 			//sanity check on key and value
-			if (key.length()>KVMessage.MAX_KEY_LENGTH){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-			}
-			if (value.length()>KVMessage.MAX_VALUE_LENGTH){
-				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "OVersized value"));
-			}
-			if (key.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-			}
-			if (value.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty value"));
-			}
+			CheckHelper.sanityCheckKeyValue(key, value);
 			
 			store.put(key, value);
 		} finally {
@@ -105,21 +95,17 @@ public class KVStore implements KeyValueInterface, Debuggable {
 	public synchronized String get(String key) throws KVException {
 		AutoGrader.agStoreGetStarted(key);
 		
+		DEBUG.debug("store receives a get request of key "+key);
 		try {
 			getDelay();
 			
 			//sanity check on key
-			if (key.length()>KVMessage.MAX_KEY_LENGTH){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-			}
-			if (key.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-			}
+			CheckHelper.sanityCheckKey(key);
 			
 			String retVal = this.store.get(key);
 			if (retVal == null) {
 //			    KVMessage msg = new KVMessage("resp", "key \"" + key + "\" does not exist in store");
-				KVMessage msg = new KVMessage(KVMessage.RESPTYPE, "Does not exsit");
+				KVMessage msg = new KVMessage(KVMessage.RESPTYPE, "Does not exist");
 				throw new KVException(msg);
 			}
 			return retVal;
@@ -134,16 +120,12 @@ public class KVStore implements KeyValueInterface, Debuggable {
 	public synchronized void del(String key) throws KVException {
 		AutoGrader.agStoreDelStarted(key);
 
+		DEBUG.debug("store receives a del request of key "+key);
 		try {
 			delDelay();
 			
 			//sanity check on key
-			if (key.length()>KVMessage.MAX_KEY_LENGTH){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Oversized key"));
-			}
-			if (key.length()==0){
-				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: empty key"));
-			}
+			CheckHelper.sanityCheckKey(key);
 			
 			String val;
 			if(key != null){
@@ -169,7 +151,6 @@ public class KVStore implements KeyValueInterface, Debuggable {
 	}
 	
     public synchronized String toXML() throws KVException {
-        // TODO: implement me
     	return this.storeToXML();
     }        
     
@@ -185,6 +166,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			docBuilder = docFactory.newDocumentBuilder();
 		} catch (ParserConfigurationException e) {
 			//this should not happen
+			DEBUG.debug("this should not happen");
 			e.printStackTrace();
 		}
  
@@ -221,6 +203,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			transformer = transformerFactory.newTransformer();
 		} catch (TransformerConfigurationException e) {
 			//this should not happen too
+			DEBUG.debug("this should not happen");
 			e.printStackTrace();
 		}
 		
@@ -234,6 +217,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			transformer.transform(source, result);
 		} catch (TransformerException e) {
 			//this should not happen
+			DEBUG.debug("this should not happen");
 			e.printStackTrace();
 		}
 		

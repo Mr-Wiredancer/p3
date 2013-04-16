@@ -1,3 +1,33 @@
+/**
+ * Handle client connections over a socket interface
+ * 
+ * @author Mosharaf Chowdhury (http://www.mosharaf.com)
+ * @author Prashanth Mohan (http://www.cs.berkeley.edu/~prmohan)
+ * 
+ * Copyright (c) 2012, University of California at Berkeley
+ * All rights reserved.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *  * Neither the name of University of California, Berkeley nor the
+ *    names of its contributors may be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *    
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ *  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
+ *  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package edu.berkeley.cs162;
 
 import java.io.IOException;
@@ -52,8 +82,9 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			} catch (KVException e) {
 				try {
 					e.getMsg().sendMessage(this.client);
+					Test.respMap.put(this.hashCode(),e.getMsg());
 				} catch (KVException e1) {
-					DEBUG.debug("error happens when trying to send back message");
+					DEBUG.debug("error happens when trying to send back error message");
 					e1.printStackTrace();
 				}
 				return;
@@ -62,8 +93,9 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			try{
 				KVMessage successMsg = new KVMessage(KVMessage.RESPTYPE, "Success");
 				successMsg.sendMessage(this.client);
+				Test.respMap.put(this.hashCode(),successMsg);
 			}catch(KVException e){
-				DEBUG.debug("error happens when trying to send back message");
+				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
 			}
 		}
@@ -74,17 +106,20 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			}catch (KVException e){
 				try {
 					e.getMsg().sendMessage(this.client);
+					Test.respMap.put(this.hashCode(),e.getMsg());
 				} catch (KVException e1) {
-					DEBUG.debug("error happens when trying to send back message");
+					DEBUG.debug("error happens when trying to send back error message");
 					e1.printStackTrace();
 				}
-				return;			}
+				return;			
+			}
 			
 			try{
 				KVMessage successMsg = new KVMessage(KVMessage.RESPTYPE, "Success");
 				successMsg.sendMessage(this.client);
+				Test.respMap.put(this.hashCode(),successMsg);
 			}catch(KVException e){
-				DEBUG.debug("error happens when trying to send back message");
+				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
 			}
 		}
@@ -96,8 +131,9 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			} catch (KVException e) {
 				try {
 					e.getMsg().sendMessage(this.client);
+					Test.respMap.put(this.hashCode(),e.getMsg());
 				} catch (KVException e1) {
-					DEBUG.debug("error happens when trying to send back message");
+					DEBUG.debug("error happens when trying to send back error message");
 					e1.printStackTrace();
 				}
 				return;
@@ -118,11 +154,12 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 					successMsg.setKey(msg.getKey());
 					successMsg.setValue(val);
 					successMsg.sendMessage(this.client);
+					Test.respMap.put(this.hashCode(),successMsg);
 				}else{
 					DEBUG.debug("this should not be printed");
 				}
 			}catch (KVException e){
-				DEBUG.debug("error happens when trying to send back message");
+				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
 			}
 		}
@@ -134,19 +171,21 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 		    	InputStream in = client.getInputStream();
 		    	 
 				KVMessage msg = new KVMessage(new KVMessage.NoCloseInputStream(in));
-				
-				//at this point, the msg is a valid KVMessage
-				DEBUG.debug("the job is: "+ msg.toXML());
+				Test.messageMap.put(this.hashCode(),msg);
+				DEBUG.debug(this.hashCode()+msg.toXML());
 				//get request
 				if ( msg.getMsgType().equals(KVMessage.GETTYPE)){
+					DEBUG.debug("Get a get request of key "+msg.getKey());
 					handleGet(msg);
 				
 				//put request	
 				}else if ( msg.getMsgType().equals(KVMessage.PUTTYPE)){
+					DEBUG.debug(String.format("Get a put request of key %s and value %s", msg.getKey(), msg.getValue()));
 					handlePut(msg);
 					
 				//del request	
 				}else if (msg.getMsgType().equals(KVMessage.DELTYPE)){
+					DEBUG.debug("Get a del request of key "+msg.getKey());
 					handleDel(msg);
 			
 				//resp request
@@ -154,7 +193,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 					try {
 						new KVMessage(KVMessage.RESPTYPE, "Unknown Error: server received a response message").sendMessage(this.client);
 					} catch (KVException e1) {
-						DEBUG.debug("error happens when trying to send back message");
+						DEBUG.debug("error happens when trying to send back error message");
 						e1.printStackTrace();
 					}
 				}
@@ -164,7 +203,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 				try {
 					e.getMsg().sendMessage(this.client);
 				} catch (KVException e1) {
-					DEBUG.debug("error happens when trying to send back message");
+					DEBUG.debug("error happens when trying to send back error message");
 					e1.printStackTrace();
 				}
 			} catch (IOException e) {
@@ -173,7 +212,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 				try {
 					new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not receive data").sendMessage(this.client);
 				} catch (KVException e1) {
-					DEBUG.debug("error happens when trying to send back message");
+					DEBUG.debug("error happens when trying to send back error message");
 					e1.printStackTrace();
 				}
 			}
@@ -190,46 +229,14 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 	 */
 	@Override
 	public void handle(Socket client) throws IOException {
-		DEBUG.debug("creating a new job");
 		Runnable r = new ClientHandler(kv_Server, client);
 		try {
-			Test.jobQueue.add(client.getPort());
 			threadpool.addToQueue(r);
-			DEBUG.debug("added to queue");
+			//Test.jobQueue.add(client.getPort());
 		} catch (InterruptedException e) {
 			// Ignore this error
 			return;
 		}
 	}
 }
-/**
- * Handle client connections over a socket interface
- * 
- * @author Mosharaf Chowdhury (http://www.mosharaf.com)
- * @author Prashanth Mohan (http://www.cs.berkeley.edu/~prmohan)
- * 
- * Copyright (c) 2012, University of California at Berkeley
- * All rights reserved.
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  * Neither the name of University of California, Berkeley nor the
- *    names of its contributors may be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *    
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- *  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
- *  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 
