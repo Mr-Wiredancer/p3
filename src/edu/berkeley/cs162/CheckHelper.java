@@ -8,7 +8,7 @@ package edu.berkeley.cs162;
 public class CheckHelper implements Debuggable {
 	
 	/**
-	 * sanity check on key and value. check null, empty(not for value) and length
+	 * sanity check on key and value. check null, empty and length
 	 * @param key
 	 * @param value
 	 * @throws KVException
@@ -40,7 +40,7 @@ public class CheckHelper implements Debuggable {
 	}
 
 	/**
-	 * check if the value null, longer than max length
+	 * check if the value null, longer than max length or empty
 	 * @param value
 	 * @throws KVException
 	 */
@@ -53,6 +53,10 @@ public class CheckHelper implements Debuggable {
 		if ( l > KVMessage.MAX_VALUE_LENGTH){
 			DEBUG.debug("The value is oversized");
 			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Oversized value"));
+		}
+		if( l==0 ){
+			DEBUG.debug("The value is empty ");
+			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "Unknown Error: the value is empty") );
 		}
 	}
 	
