@@ -65,14 +65,14 @@ public class KVServer implements KeyValueInterface,Debuggable {
 		// Must be called before anything else
 		AutoGrader.agKVServerPutStarted(key, value);
 	
-		try{			
+		try {
 			//sanity check on key and value
 			CheckHelper.sanityCheckKeyValue(key, value);
 			
 			this.dataCache.put(key, value);
 			this.dataStore.put(key, value);
 
-		}finally{
+		} finally {
 			AutoGrader.agKVServerPutFinished(key, value);
 		}
 	}
@@ -86,13 +86,13 @@ public class KVServer implements KeyValueInterface,Debuggable {
 		// Must be called before anything else
 		AutoGrader.agKVServerGetStarted(key);
 		
-		try{
+		try {
 			//sanity check on key
 			CheckHelper.sanityCheckKey(key);
 			
 			//try to get the value in cache
 			String cacheValue = this.dataCache.get(key);
-			if (cacheValue!=null){
+			if (cacheValue!=null) {
 				return cacheValue; //directly return the value if the value is in cache
 			}
 			
@@ -101,10 +101,9 @@ public class KVServer implements KeyValueInterface,Debuggable {
 			this.dataCache.replace(key, storeResult);
 			return storeResult;
 
-		}finally{
+		} finally {
 			AutoGrader.agKVServerGetFinished(key);
 		}
-		
 	}
 	
 	/**
@@ -116,14 +115,14 @@ public class KVServer implements KeyValueInterface,Debuggable {
 		// Must be called before anything else
 		AutoGrader.agKVServerDelStarted(key);
 
-		try{
+		try {
 			//sanity check on key
 			CheckHelper.sanityCheckKey(key);
 			
 			this.dataCache.del(key);
 			this.dataStore.del(key); //will throw KVException if is not in  
 		
-		}finally{
+		} finally {
 			AutoGrader.agKVServerDelFinished(key);
 		}
 	}
@@ -132,7 +131,7 @@ public class KVServer implements KeyValueInterface,Debuggable {
 	 * Only for testing
 	 * @return XML representation of store
 	 */
-	public String dumpStore(){
+	public String dumpStore() {
 		try {
 			return this.dataStore.toXML();
 		} catch (KVException e) {
@@ -148,5 +147,4 @@ public class KVServer implements KeyValueInterface,Debuggable {
 	public String dumpCache(){
 		return this.dataCache.toXML();
 	}
-	
 }

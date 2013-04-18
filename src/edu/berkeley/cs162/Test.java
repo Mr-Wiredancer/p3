@@ -21,25 +21,22 @@ public class Test {
 			e.printStackTrace();
 		}
 		
-		
 		ClientThread cThread = new ClientThread();
 		cThread.start();
 		
-		try{
+		try {
 			sThread.join();
 			cThread.join();
-		}catch (Exception e){
-			
+		} catch (Exception e) {
 		}
 	}
 	
-
 	/**
 	 * The thread that runs KVServer codes
 	 * @author JL
 	 *
 	 */
-	private class ServerThread extends Thread implements Debuggable{
+	private class ServerThread extends Thread implements Debuggable {
 	
 		public ServerThread(){
 			super();
@@ -52,11 +49,11 @@ public class Test {
 			SocketServer server = new SocketServer("localhost", 8080);
 			NetworkHandler handler = new KVClientHandler(key_server);
 			server.addHandler(handler);
-			try{
+			try {
 				server.connect();
 				DEBUG.debug("Starting Server");
 				server.run();
-			}catch (Exception e){
+			} catch (Exception e) {
 				DEBUG.debug("server shut down because of errors");
 				e.printStackTrace();
 			}
@@ -68,19 +65,16 @@ public class Test {
 	 * @author JL
 	 *
 	 */
-	private class ClientThread extends Thread implements Debuggable{
-		
-		public ClientThread(){
+	private class ClientThread extends Thread implements Debuggable {
+		public ClientThread() {
 			super();
 			this.setName("ClientThread"+Test.clientThreadCounter++);
 		}
-		/**
-		 * 
-		 */
-		public void run(){
+    
+		public void run() {
 			DEBUG.debug("starting client");
 			KVClient kc = new KVClient("localhost", 8080);
-			try{
+			try {
 				String three = "3";
 				String seven = "7";
 				
@@ -92,11 +86,10 @@ public class Test {
 				
 				DEBUG.debug("de 3");
 				kc.del(three);
-			}catch(Exception e){
+			} catch(Exception e) {
 				DEBUG.debug("error");
 				e.printStackTrace();
 			}
 		}
 	}
-
 }

@@ -26,15 +26,15 @@ public class PlayConsole {
 	public static SocketServer server = null;
 	public static KVServer key_server = null;	
 	
-	private static class ServerThread extends Thread implements Debuggable{
+	private static class ServerThread extends Thread implements Debuggable {
 		PrintStream out = null;
-		public ServerThread(){
+		public ServerThread() {
 			super();
 			this.setName("ServerThread");
 		}
 		
-		public void run(){
-			try{
+		public void run() {
+			try {
 				KVServer key_server1 = new KVServer(2, 2);
 				SocketServer server1 = new SocketServer("localhost", 8080);
 				
@@ -46,13 +46,13 @@ public class PlayConsole {
 				server.connect();
 				DEBUG.debug("server is ready");
 				server.run();
-			}catch(Exception e){
+			} catch(Exception e) {
 				DEBUG.debug("socket is closed");
 			}
 		}	
 	}
 	
-	public static void main(String [] args){
+	public static void main(String [] args) {
 		Thread.currentThread().setName("PlayConsole");
 		ServerThread st = new ServerThread();
 		st.start();
@@ -61,61 +61,54 @@ public class PlayConsole {
 		
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		String input = null;
-		try{
-			while ((input=reader.readLine())!=null){
-				if (input.equals("quit")){
+		try {
+			while ((input=reader.readLine())!=null) {
+				if (input.equals("quit")) {
 					handleQuit();
 					System.exit(0);
 				}
 				
 				String [] inputs = input.split(",");
 				
-				if (inputs.length < 1 || inputs.length>3){
+				if (inputs.length < 1 || inputs.length>3) {
 					System.out.println("could not recognize ur command");
 					continue;
 				}
 				
 				String command = inputs[0];
-				if (command.equals("put")){
+				if (command.equals("put")) {
 					if (inputs.length!=3){
 						System.out.println("could not recognize ur command");
 						continue;
 					}
 					kc.put(inputs[1],inputs[2]);
-				}else if(command.equals("get")){
+				} else if(command.equals("get")) {
 					if (inputs.length!=2){
 						System.out.println("could not recognize ur command");
 						continue;
 					}
 					kc.get(inputs[1]);
-				}else if(command.equals("del")){
+				} else if(command.equals("del")) {
 					if (inputs.length!=2){
 						System.out.println("could not recognize ur command");
 						continue;
 					}
 					kc.del(inputs[1]);
-					
-					
-				}else if(command.equals("dumpstore")){
+				} else if(command.equals("dumpstore")) {
 					System.out.println(PlayConsole.key_server.dumpStore());
-					
-				}else if(command.equals("dumpcache")){	
+				} else if(command.equals("dumpcache")) {	
 					System.out.println(PlayConsole.key_server.dumpCache());
-					
-				//Extend so that it can accept more commands, such as dumpCache and cumpStore
-				}else{
+				} else {
 					System.out.println("could not recognize ur command");
 				}
-				
 			}
-		}catch(Exception e){
+		} catch(Exception e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		
 	}
 	
-	public static void handleQuit(){
+	public static void handleQuit() {
 		System.out.println("quiting");
 		server.stop();
 	}

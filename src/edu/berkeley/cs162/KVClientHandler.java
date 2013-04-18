@@ -79,19 +79,19 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 				return;
 			}
 			
-			try{
+			try {
 				KVMessage successMsg = new KVMessage(KVMessage.RESPTYPE, "Success");
 				successMsg.sendMessage(this.client);
-			}catch(KVException e){
+			} catch(KVException e) {
 				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
 			}
 		}
 		
 		private void handleDel(KVMessage msg){
-			try{
+			try {
 				this.kvServer.del(msg.getKey());
-			}catch (KVException e){
+			} catch (KVException e) {
 				try {
 					e.getMsg().sendMessage(this.client);
 				} catch (KVException e1) {
@@ -101,10 +101,10 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 				return;			
 			}
 			
-			try{
+			try {
 				KVMessage successMsg = new KVMessage(KVMessage.RESPTYPE, "Success");
 				successMsg.sendMessage(this.client);
-			}catch(KVException e){
+			} catch(KVException e) {
 				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
 			}
@@ -124,9 +124,9 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 				return;
 			}
 		
-			try{
+			try {
 				// val should not be null. kvserver.get return non-null string or KVException.
-				if (val!=null){
+				if (val != null) {
 					//successful get
 					KVMessage successMsg = null;
 					try {
@@ -139,10 +139,10 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 					successMsg.setKey(msg.getKey());
 					successMsg.setValue(val);
 					successMsg.sendMessage(this.client);
-				}else{
+				} else {
 					DEBUG.debug("this should not be printed");
 				}
-			}catch (KVException e){
+			} catch (KVException e) {
 				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
 			}
@@ -150,29 +150,28 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 		
 		@Override
 		public void run() {
-		     try {
-		    	 
-		    	InputStream in = client.getInputStream();
-		    	 
+		  try {
+		    InputStream in = client.getInputStream();
+		    
 				KVMessage msg = new KVMessage(new KVMessage.NoCloseInputStream(in));
-
+        
 				//get request
-				if ( msg.getMsgType().equals(KVMessage.GETTYPE)){
+				if (msg.getMsgType().equals(KVMessage.GETTYPE)) {
 					DEBUG.debug("Get a get request of key "+msg.getKey());
 					handleGet(msg);
 				
 				//put request	
-				}else if ( msg.getMsgType().equals(KVMessage.PUTTYPE)){
+				} else if (msg.getMsgType().equals(KVMessage.PUTTYPE)) {
 					DEBUG.debug(String.format("Get a put request of key %s and value %s", msg.getKey(), msg.getValue()));
 					handlePut(msg);
 					
 				//del request	
-				}else if (msg.getMsgType().equals(KVMessage.DELTYPE)){
+				} else if (msg.getMsgType().equals(KVMessage.DELTYPE)) {
 					DEBUG.debug("Get a del request of key "+msg.getKey());
 					handleDel(msg);
 			
 				//resp request
-				}else{
+				} else {
 					try {
 						new KVMessage(KVMessage.RESPTYPE, "Unknown Error: server received a response message").sendMessage(this.client);
 					} catch (KVException e1) {
@@ -180,7 +179,6 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 						e1.printStackTrace();
 					}
 				}
-				
 			} catch (KVException e) {
 				//exception when getting KVMessage from the socket's input stream
 				try {

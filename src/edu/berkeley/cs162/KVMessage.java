@@ -71,11 +71,11 @@ public class KVMessage implements Debuggable{
 
 	/* Solution from http://weblogs.java.net/blog/kohsuke/archive/2005/07/socket_xml_pitf.html */
 	public static class NoCloseInputStream extends FilterInputStream {
-	    public NoCloseInputStream(InputStream in) {
-	        super(in);
-	    }
-	    
-	    public void close() {} // ignore close
+    public NoCloseInputStream(InputStream in) {
+        super(in);
+    }
+    
+    public void close() {} // ignore close
 	}
 	
 	/***
@@ -109,41 +109,39 @@ public class KVMessage implements Debuggable{
      * c. "Message format incorrect" - if there message does not conform to the required specifications. Examples include incorrect message type. 
      */
 	public KVMessage(InputStream input) throws KVException {
-    	try {
-    		
-    		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-    		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-    		Document doc = dBuilder.parse(input);
-    		
-    		doc.getDocumentElement().normalize();
-    		
-    		//check doc structure
-    		checkDocStructure(doc);
-    		
-    		Node message = doc.getFirstChild();
-    		
-    		String type = checkKVMessageStructure(message);
-    		this.msgType = type;
-    		
-    		NodeList nodes = message.getChildNodes();
-    		if (type.equals(KVMessage.PUTTYPE)){
-    			checkKeyNode(nodes.item(0));
-    			checkValNode(nodes.item(1));
-    		}else if(type.equals(KVMessage.GETTYPE)){
-    			checkKeyNode(nodes.item(0));
-    		}else if(type.equals(KVMessage.DELTYPE)){
-    			checkKeyNode(nodes.item(0));
-    		}else{
-    			if (nodes.getLength()==1){
-	    			checkMessageNode(nodes.item(0));
-    			}else if(nodes.getLength()==2){
-    				checkKeyNode(nodes.item(0));
-    				checkValNode(nodes.item(1));
-    			}else{
-    				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message"));
-    			}
-    		}
-    		
+    try {
+      DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+      DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+      Document doc = dBuilder.parse(input);
+      
+      doc.getDocumentElement().normalize();
+      
+      //check doc structure
+      checkDocStructure(doc);
+      
+      Node message = doc.getFirstChild();
+      
+      String type = checkKVMessageStructure(message);
+      this.msgType = type;
+      
+      NodeList nodes = message.getChildNodes();
+      if (type.equals(KVMessage.PUTTYPE)) {
+        checkKeyNode(nodes.item(0));
+        checkValNode(nodes.item(1));
+      } else if(type.equals(KVMessage.GETTYPE)) {
+        checkKeyNode(nodes.item(0));
+      } else if(type.equals(KVMessage.DELTYPE)) {
+        checkKeyNode(nodes.item(0));
+      } else {
+        if (nodes.getLength() == 1) {
+          checkMessageNode(nodes.item(0));
+        } else if(nodes.getLength() == 2) {
+          checkKeyNode(nodes.item(0));
+          checkValNode(nodes.item(1));
+        } else {
+          throw new KVException(new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message"));
+        }
+      }
 		} catch (ParserConfigurationException e) {
 			//this should not happen
 			DEBUG.debug("This should not happen");
@@ -167,12 +165,12 @@ public class KVMessage implements Debuggable{
 	 * @param keyNode
 	 * @throws KVException
 	 */
-	private void checkMessageNode(Node messageNode) throws KVException{
+	private void checkMessageNode(Node messageNode) throws KVException {
 		if (messageNode.getAttributes().getLength()!=0)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
 		NodeList nodes = messageNode.getChildNodes();
-		if ( nodes.getLength()!=1 || nodes.item(0).getNodeType()!=Document.TEXT_NODE)
+		if (nodes.getLength()!=1 || nodes.item(0).getNodeType()!=Document.TEXT_NODE)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
 		String message = messageNode.getFirstChild().getTextContent();
@@ -184,7 +182,7 @@ public class KVMessage implements Debuggable{
 	 * @param keyNode
 	 * @throws KVException
 	 */
-	private void checkKeyNode(Node keyNode) throws KVException{
+	private void checkKeyNode(Node keyNode) throws KVException {
 		if (keyNode.getAttributes().getLength()!=0)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
@@ -204,12 +202,12 @@ public class KVMessage implements Debuggable{
 	 * @param keyNode
 	 * @throws KVException
 	 */
-	private void checkValNode(Node valNode) throws KVException{
+	private void checkValNode(Node valNode) throws KVException {
 		if (valNode.getAttributes().getLength()!=0)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
 		NodeList nodes = valNode.getChildNodes();
-		if ( nodes.getLength()!=1 || nodes.item(0).getNodeType()!=Document.TEXT_NODE)
+		if (nodes.getLength()!=1 || nodes.item(0).getNodeType()!=Document.TEXT_NODE)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
 		String val = valNode.getFirstChild().getTextContent();
@@ -226,31 +224,30 @@ public class KVMessage implements Debuggable{
 	 * @return type of the KVmessage
 	 * @throws KVException
 	 */
-	private String checkKVMessageStructure(Node messageNode) throws KVException{
+	private String checkKVMessageStructure(Node messageNode) throws KVException {
 		NamedNodeMap attrs = messageNode.getAttributes();
 		
 		if (attrs.getLength()!=1)
-			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
 		Node attr = attrs.item(0);
 		String attrName = attr.getNodeName();
 		String attrValue = attr.getNodeValue();
 		if (!attrName.equals("type"))
-			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
+			throw new KVException(new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
-		if (attrValue.equals(KVMessage.PUTTYPE)){
+		if (attrValue.equals(KVMessage.PUTTYPE)) {
 			checkPutTypeMessage(messageNode);
-		}else if (attrValue.equals(KVMessage.GETTYPE)){
+		} else if (attrValue.equals(KVMessage.GETTYPE)) {
 			checkGetTypeMessage(messageNode);
-		}else if(attrValue.equals(KVMessage.DELTYPE)){
+		} else if(attrValue.equals(KVMessage.DELTYPE)) {
 			checkDelTypeMessage(messageNode);
-		}else if(attrValue.equals(KVMessage.RESPTYPE)){
+		} else if(attrValue.equals(KVMessage.RESPTYPE)) {
 			checkRespTypeMessage(messageNode);
-		}else{
+		} else {
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 		}
 		return attrValue;
-		
 	}
 	
 	/**
@@ -258,23 +255,21 @@ public class KVMessage implements Debuggable{
 	 * @param messageNode
 	 * @throws KVException
 	 */
-	private void checkRespTypeMessage(Node messageNode) throws KVException{
+	private void checkRespTypeMessage(Node messageNode) throws KVException {
 		NodeList nodes = messageNode.getChildNodes();
 			
-		if (nodes.getLength()==1){
-
+		if (nodes.getLength() == 1) {
 			Node message = nodes.item(0);
 			
 			if (!message.getNodeName().equals("Message"))
 				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
-		
-		}else if(nodes.getLength()==2){
+		} else if (nodes.getLength() == 2) {
 			Node keyNode = nodes.item(0);
 			Node valNode = nodes.item(1);
 
 			if (!keyNode.getNodeName().equals("Key") || !valNode.getNodeName().equals("Value"))
 				throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
-		}else{
+		} else {
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 		}
 	}
@@ -284,7 +279,7 @@ public class KVMessage implements Debuggable{
 	 * @param messageNode
 	 * @throws KVException
 	 */
-	private void checkDelTypeMessage(Node messageNode) throws KVException{
+	private void checkDelTypeMessage(Node messageNode) throws KVException {
 		NodeList nodes = messageNode.getChildNodes();
 			
 		if (nodes.getLength()!=1)
@@ -294,7 +289,6 @@ public class KVMessage implements Debuggable{
 		
 		if (!key.getNodeName().equals("Key"))
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
-		
 	}
 	
 	/**
@@ -302,8 +296,8 @@ public class KVMessage implements Debuggable{
 	 * @param messageNode
 	 * @throws KVException
 	 */
-	private void checkGetTypeMessage(Node messageNode) throws KVException{
-	NodeList nodes = messageNode.getChildNodes();
+	private void checkGetTypeMessage(Node messageNode) throws KVException {
+    NodeList nodes = messageNode.getChildNodes();
 		
 		if (nodes.getLength()!=1)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
@@ -319,10 +313,10 @@ public class KVMessage implements Debuggable{
 	 * @param messageNode
 	 * @throws KVException
 	 */
-	private void checkPutTypeMessage(Node messageNode) throws KVException{
+	private void checkPutTypeMessage(Node messageNode) throws KVException {
 		NodeList nodes = messageNode.getChildNodes();
 		
-		if (nodes.getLength()!=2)
+		if (nodes.getLength() != 2)
 			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "XML Error: Received unparseable message") );
 
 		Node key = nodes.item(0);
@@ -337,9 +331,9 @@ public class KVMessage implements Debuggable{
 	 * @param doc
 	 * @throws KVException
 	 */
-	private void checkDocStructure(Document doc) throws KVException{
+	private void checkDocStructure(Document doc) throws KVException {
 		//doc shoudl have only one child with name KVMessage	
-		if ( !doc.getXmlEncoding().equals("UTF-8") 
+		if (!doc.getXmlEncoding().equals("UTF-8") 
 				|| !doc.getXmlVersion().equals("1.0")
 				|| doc.getChildNodes().getLength()!=1 
 				|| !doc.getFirstChild().getNodeName().equals("KVMessage"))
@@ -352,11 +346,10 @@ public class KVMessage implements Debuggable{
 	 * @throws KVException if not enough data is available to generate a valid KV XML message
 	 */
 	public String toXML() throws KVException {
-    	DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+    DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = null;
 		try {
 			docBuilder = docFactory.newDocumentBuilder();
-
 		} catch (ParserConfigurationException e) {
 			DEBUG.debug("this should not happen");
 			e.printStackTrace();
@@ -370,7 +363,7 @@ public class KVMessage implements Debuggable{
 		doc.setXmlStandalone(true);
 		doc.appendChild(rootElement);
 		
-		if (this.msgType.equals(KVMessage.PUTTYPE)){
+		if (this.msgType.equals(KVMessage.PUTTYPE)) {
 			CheckHelper.sanityCheckKeyValue(this.key, this.value);
 			
 			Element keyElement = doc.createElement("Key");
@@ -381,20 +374,20 @@ public class KVMessage implements Debuggable{
 			
 			rootElement.appendChild(keyElement);
 			rootElement.appendChild(valElement);
-		}else if(this.msgType.equals(KVMessage.GETTYPE) || this.msgType.equals(KVMessage.DELTYPE)){
+		} else if(this.msgType.equals(KVMessage.GETTYPE) || this.msgType.equals(KVMessage.DELTYPE)) {
 			CheckHelper.sanityCheckKey(this.key);
 			
 			Element keyElement = doc.createElement("Key");
 			keyElement.appendChild(doc.createTextNode(this.key));
 		
 			rootElement.appendChild(keyElement);
-		}else{
-			if (this.message!=null){
+		} else {
+			if (this.message!=null) {
 				Element messageElement = doc.createElement("Message");
 				messageElement.appendChild(doc.createTextNode(this.message));
 			
 				rootElement.appendChild(messageElement);
-			}else{
+			} else {
 				CheckHelper.sanityCheckKeyValue(this.key, this.value);
 					
 				Element keyElement = doc.createElement("Key");
@@ -407,8 +400,7 @@ public class KVMessage implements Debuggable{
 				rootElement.appendChild(valElement);
 			}
 		}
-		
-		
+    
 		TransformerFactory transformerFactory = TransformerFactory.newInstance();
 		Transformer transformer = null;
 		try {
@@ -485,4 +477,3 @@ public class KVMessage implements Debuggable{
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
