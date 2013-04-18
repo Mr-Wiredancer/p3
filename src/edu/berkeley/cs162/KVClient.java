@@ -145,6 +145,12 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		
 		this.closeHost(sock);
 	
+
+		DEBUG.debug("receved message: "+response.toXML());
+
+		//Test.respMap.put(sock.getLocalPort(), response);
+		//Test.messageMap.put(sock.getLocalPort(),msg);
+
 		if (!response.getMessage().equals("Success")){
 			DEBUG.debug("Put request failed. Error message from server: "+ response.getMessage());
 			throw new KVException(response);
@@ -152,6 +158,7 @@ public class KVClient implements KeyValueInterface, Debuggable {
 			DEBUG.debug("Put request succeeded");
 			
 		//TODO: should we throw KVException when server sends back an error message?
+
 	}
 
 	//what to return when unsuccessful? should we throw exception or return null?
@@ -208,6 +215,10 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		}
 		this.closeHost(sock);
 		
+
+		//Test.respMap.put(sock.getLocalPort(), response);
+		//Test.messageMap.put(sock.getLocalPort(),msg);
+
 		if (response.getMessage()!=null){
 			DEBUG.debug("Get request failed. Error message from server: "+ response.getMessage());
 			throw new KVException(response);
@@ -269,6 +280,16 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		}
 		
 		this.closeHost(sock);
+
+		
+		DEBUG.debug("received message: "+response.toXML());
+		
+		if (!response.getMessage().equals("Success"))
+			DEBUG.debug(response.toXML());
+		//Test.respMap.put(sock.getLocalPort(), response);
+		//Test.messageMap.put(sock.getLocalPort(),msg);
+		
+
 	
 		if (!response.getMessage().equals("Success")){
 			DEBUG.debug("Del request failed. Error message from server: "+ response.getMessage());
