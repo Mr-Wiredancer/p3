@@ -26,7 +26,8 @@ public class KVClientTest {
   public void testPut1() {
     try {
       client.put("key1", "value1");
-      // inspect KVStore and/or KVCache
+      String result = client.get("key1");
+      assertEquals("value1", result);
     } catch (KVException e) {
       fail();
     }
@@ -37,7 +38,6 @@ public class KVClientTest {
   public void testPut2() {
     try {
       client.put("key1", "value1");
-      // inspect KVStore and/or KVCache
       client.put("key1", "value2");
       assertEquals("value2", client.get("key1"));
     } catch (KVException e) {
@@ -64,15 +64,11 @@ public class KVClientTest {
   }
   
   /** Test successful del. */
-  @Test
-  public void testDel1() {
-    try {
-      client.put("key1", "value1");
-      client.del("key1");
-      // inspect KVStore and/or KVCache
-    } catch (KVException e) {
-      fail();
-    }
+  @Test(expected = KVException.class)
+  public void testDel1() throws KVException {
+    client.put("key1", "value1");
+    client.del("key1");
+    client.get("key1");
   }
   
   /** Test del with nonexistent key. */

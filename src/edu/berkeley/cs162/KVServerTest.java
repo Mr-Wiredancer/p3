@@ -12,8 +12,9 @@ public class KVServerTest {
     server = new KVServer(1, 4);
   }
   
+  /** Test successful put */
 	@Test
-	public void testPut() {
+	public void testPut1() {
     try {
 		  server.put("key1", "value1");
     } catch (KVException e) {
@@ -21,6 +22,7 @@ public class KVServerTest {
     }
 	}
 
+  /** Test successful get */
   @Test
 	public void testGet1() {
     try {
@@ -32,11 +34,13 @@ public class KVServerTest {
     }
 	}
   
+  /** Test get with nonexistent key */
   @Test(expected = KVException.class)
 	public void testGet2() throws KVException {
 		server.get("key1");
 	}
 
+  /** Test successful del */
   @Test(expected = KVException.class)
 	public void testDel1() throws KVException {
     server.put("key1", "value1");
@@ -44,6 +48,7 @@ public class KVServerTest {
     server.get("key1");
 	}
   
+  /** Test del with nonexistent key */
   @Test(expected = KVException.class)
 	public void testDel2() throws KVException {
 		server.del("key1");
