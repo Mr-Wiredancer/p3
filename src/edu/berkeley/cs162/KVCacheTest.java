@@ -7,7 +7,7 @@ import org.junit.Test;
 public class KVCacheTest {
 
 	@Test
-	public void replacementTest1() {
+	public void testReplacement1() {
 		KVCache cache = new KVCache(2,2);
 		try {
 			cache.put("key1", "val1");
@@ -28,7 +28,7 @@ public class KVCacheTest {
 	}
 	
 	@Test
-	public void replacementTest2(){
+	public void testReplacement2(){
 		KVCache cache = new KVCache(1, 4);
 		try {
 			cache.put("key1", "val1");
