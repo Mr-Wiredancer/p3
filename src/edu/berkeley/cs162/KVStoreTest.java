@@ -78,6 +78,14 @@ public class KVStoreTest {
 			fail();
 		}
 	}
+  
+  @Test(expected = KVException.class)
+  public void singleDelTest() throws KVException {
+    this.naivePopulateStore();
+    assertEquals("value2", store.get("key2"));
+    store.del("key2");
+    store.get("key2");
+  }
 	
 	@Test
 	public void dumpAndRestoreTest(){
