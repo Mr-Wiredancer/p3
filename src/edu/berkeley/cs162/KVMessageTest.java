@@ -48,7 +48,7 @@ public class KVMessageTest {
 			KVMessage msg = new KVMessage(KVMessage.GETTYPE);
 			msg.toXML();
 		}catch(KVException e){
-			assertEquals(e.getMsg().getMessage(), "Unknown Error: not enough data to build XML");
+			assertEquals(e.getMsg().getMessage(), "Unknown Error: the key is null");
 		}
 		
 		try{
@@ -64,7 +64,7 @@ public class KVMessageTest {
 			msg.setValue("value1");
 			msg.toXML();
 		}catch(KVException e){
-			assertEquals(e.getMsg().getMessage(), "Unknown Error: not enough data to build XML");
+			assertEquals(e.getMsg().getMessage(), "Unknown Error: the key is null");
 		}
 		
 		try{
@@ -72,7 +72,7 @@ public class KVMessageTest {
 			msg.setMessage("value1");
 			msg.toXML();
 		}catch(KVException e){
-			assertEquals(e.getMsg().getMessage(), "Unknown Error: not enough data to build XML");
+			assertEquals(e.getMsg().getMessage(), "Unknown Error: the key is null");
 		}
 		
 		try{

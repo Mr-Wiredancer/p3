@@ -127,12 +127,10 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			//sanity check on key
 			CheckHelper.sanityCheckKey(key);
 			
-			String val;
-			if(key != null){
-				val = this.store.remove(key);
-				if (val==null)
-					throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Does not exist"));
-			}
+			String val = this.store.remove(key);
+			if (val==null)
+				throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Does not exist"));
+		
 		} finally {
 			AutoGrader.agStoreDelFinished(key);
 		}
@@ -168,6 +166,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			//this should not happen
 			DEBUG.debug("this should not happen");
 			e.printStackTrace();
+			return ""; //return so that the rest doesn't break 
 		}
  
 		// root element
@@ -176,7 +175,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 		doc.setXmlStandalone(true);
 		doc.appendChild(rootElement);
 		
-		Enumeration keys = this.store.keys();
+		Enumeration<String> keys = this.store.keys();
 		while ( keys.hasMoreElements() ){
 			String key = (String)keys.nextElement();
 			String val = this.store.get(key);
@@ -205,6 +204,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			//this should not happen too
 			DEBUG.debug("this should not happen");
 			e.printStackTrace();
+			return ""; //return so that the rest doesn't break 
 		}
 		
 		StringWriter writer = new StringWriter();
@@ -219,6 +219,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			//this should not happen
 			DEBUG.debug("this should not happen");
 			e.printStackTrace();
+			return ""; //return so that the rest doesn't break 
 		}
 		
 		String xml = writer.toString();
@@ -306,10 +307,9 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
 
     	String key = nodes.item(0).getTextContent();
-    	
-    	if (key.length()>KVMessage.MAX_KEY_LENGTH || key.length()==0)
-			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
 
+    	CheckHelper.sanityCheckKey(key);
+    	
     	return key;
     }
     
@@ -323,9 +323,9 @@ public class KVStore implements KeyValueInterface, Debuggable {
 	
 		String value = nodes.item(0).getTextContent();
 		
-		if (value.length()>KVMessage.MAX_VALUE_LENGTH || value.length()==0)
-			throw new KVException( new KVMessage (KVMessage.RESPTYPE, "IO Error"));
-	
+		CheckHelper.sanityCheckValue(value);
+
+		
 		return value;
     }    
     
