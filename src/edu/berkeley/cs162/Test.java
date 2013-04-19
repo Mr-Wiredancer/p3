@@ -1,14 +1,10 @@
 package edu.berkeley.cs162;
 
 import static org.junit.Assert.*;
-import java.net.Socket;
 
-import java.io.IOException;
-import java.util.Scanner;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.logging.Logger;
 
 public class Test implements Debuggable{
 	public static int clientThreadCounter = 0;
@@ -16,28 +12,7 @@ public class Test implements Debuggable{
 	public static ThreadPool threadPool;
 	public static LinkedList<Integer> jobQueue;
 	public static LinkedList<KVMessage> request, resp;
-	
-	//@org.junit.Test
-	/*public void test() {
-
-		ServerThread sThread = new ServerThread();
-		sThread.start();
 		
-		try {
-			Thread.currentThread().sleep(500); //wait the server to start
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-		ClientThread cThread = new ClientThread();
-		cThread.start();
-		
-		ClientThread cThread2 = new ClientThread();
-		cThread2.start();
-	}*/
-	
 	@org.junit.Test
 	public void test() throws Exception{
 		testPut();
@@ -49,13 +24,6 @@ public class Test implements Debuggable{
 		testDelKeyNotInStore();
 		testPutandDel();
 		pressuretest();
-
-		/*try{
-			sThread.join();
-			cThread.join();
-		}catch (Exception e){
-			
-		}*/
 
 	}
 	
@@ -146,7 +114,6 @@ public class Test implements Debuggable{
     	TestHelper t = new TestHelper("1,put,k1,v1;2,del,k1;3,get,k1");
     	Thread.currentThread().sleep(500);
     	check();
-     //	DEBUG.debug(resp.toString());
     }
 
     
@@ -175,12 +142,9 @@ public class Test implements Debuggable{
     		gets = gets + (i+n) + ",get,k"+i+";";
     		dels = dels + (i+2*n) + ",del,k"+i+";";
     	}
-    	//DEBUG.debug(puts+gets+dels);
     	TestHelper t = new TestHelper(puts+gets+dels);
     	Thread.currentThread().sleep(2000);
-    	check();
-    	//DEBUG.debug("size is "+resp.size());
-    	
+    	check();    	
     }
     /* **
 	 * The thread that runs KVServer codes
@@ -275,14 +239,11 @@ public class Test implements Debuggable{
 				if (args.length == 4) 
 					value = args[3];
 				if (!clientMap.containsKey(clientID)){
-						Runnable r = new ClientThread(type, key, value);
-						new Thread(r).start();
-						clientMap.put(clientID, (Thread)r);
-					}				
-			
+					Runnable r = new ClientThread(type, key, value);
+					new Thread(r).start();
+					clientMap.put(clientID, (Thread)r);
+				}				
+			}
 		}
-
 	}
-	}
-
 }
