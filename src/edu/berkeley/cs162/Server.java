@@ -25,8 +25,8 @@ public class Server {
 		System.out.println("Starting Server");
 		server.run();
 	}
-
 }
+
 /**
  * Sample instantiation of the Key-Value server  
  * 
@@ -57,4 +57,3 @@ public class Server {
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-

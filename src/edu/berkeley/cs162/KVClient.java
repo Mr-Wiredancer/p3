@@ -57,22 +57,22 @@ public class KVClient implements KeyValueInterface, Debuggable {
 	}
 	
 	private Socket connectHost() throws KVException {
-	    Socket socket;
-	    try{
-	    	socket = new Socket(this.server, port);
-	    	return socket;
-	    	
-	    //could not connect to the server/port tuple	
-	    }catch (UnknownHostException e){
-	    	DEBUG.debug("cannot connect to "+this.server+" with port "+this.port);
-	    	e.printStackTrace();
-	    	throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not connect"));
-	    
-	    //could not create the socket
-	    }catch (IOException e){
-	    	DEBUG.debug("cannot create a socket with "+this.server+" with port "+this.port);
-	    	e.printStackTrace();
-	    	throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not create socket"));
+    Socket socket;
+    try {
+      socket = new Socket(this.server, port);
+      return socket;
+      
+    //could not connect to the server/port tuple	
+    } catch (UnknownHostException e) {
+      DEBUG.debug("cannot connect to "+this.server+" with port "+this.port);
+      e.printStackTrace();
+      throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not connect"));
+    
+    //could not create the socket
+    } catch (IOException e) {
+      DEBUG.debug("cannot create a socket with "+this.server+" with port "+this.port);
+      e.printStackTrace();
+      throw new KVException(new KVMessage(KVMessage.RESPTYPE, "Network Error: Could not create socket"));
 		}
 	}
 	
@@ -145,12 +145,12 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		
 		this.closeHost(sock);
 	
-		if (!response.getMessage().equals("Success")){
+		if (!response.getMessage().equals("Success")) {
 			DEBUG.debug("Put request failed. Error message from server: "+ response.getMessage());
 			throw new KVException(response);
-		}else
+		} else {
 			DEBUG.debug("Put request succeeded");
-			
+		}
 		//TODO: should we throw KVException when server sends back an error message?
 
 	}
@@ -209,10 +209,10 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		}
 		this.closeHost(sock);
 		
-		if (response.getMessage()!=null){
+		if (response.getMessage()!=null) {
 			DEBUG.debug("Get request failed. Error message from server: "+ response.getMessage());
 			throw new KVException(response);
-		}else{
+		} else {
 			DEBUG.debug("Get request succeeded. Value is "+response.getValue());
 			return response.getValue(); 
 		}
@@ -274,9 +274,9 @@ public class KVClient implements KeyValueInterface, Debuggable {
 		if (!response.getMessage().equals("Success")){
 			DEBUG.debug("Del request failed. Error message from server: "+ response.getMessage());
 			throw new KVException(response);
-		}else
+		} else {
 			DEBUG.debug("Del request succeeded");
-		
+		}
 		//TODO: wut to do when del failed? throw KVException? 
 	}
 }

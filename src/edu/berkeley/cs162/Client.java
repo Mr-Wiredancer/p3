@@ -11,7 +11,7 @@ public class Client {
 	 */
 	public static void main(String[] args) throws IOException {
 		KVClient kc = new KVClient("localhost", 8080);
-		try{
+		try {
 			String three = "3";
 			String seven = "7";
 			System.out.println("putting (3, 7)");
@@ -24,11 +24,12 @@ public class Client {
 			String value = kc.get(three);					
 			System.out.println("returned: " + value);
 			kc.del(three);
-		}catch(Exception e){
+		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
 }
+
 /**
  * Sample instantiation of the Key-Value client  
  * 
@@ -59,4 +60,3 @@ public class Client {
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-

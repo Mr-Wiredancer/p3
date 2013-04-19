@@ -43,7 +43,8 @@ public class KVCacheTest {
 			
 			assertEquals(cache.get("key2"),null);
 			
-			cache.get("key3");cache.get("key1");
+			cache.get("key3");
+      cache.get("key1");
 			
 			cache.put("key6", "val6");
 			assertEquals(cache.get("key4"), null);
@@ -54,4 +55,8 @@ public class KVCacheTest {
 			fail();
 		}		
 	}
+  
+  @Test
+  public void replacementTest3() {
+  }
 }

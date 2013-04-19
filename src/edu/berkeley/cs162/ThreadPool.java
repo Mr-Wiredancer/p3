@@ -51,14 +51,13 @@ public class ThreadPool implements Debuggable{
 	 * 
 	 * @param size  How many threads in the thread pool.
 	 */
-	public ThreadPool(int size)
-	{      
+	public ThreadPool(int size) {      
 		threads = new WorkerThread[size];
 		initializeThreads();
 	}
 	
-	public void cleanup(){
-		for (WorkerThread t : threads){
+	public void cleanup() {
+		for (WorkerThread t : threads) {
 			t.signalFinish();
 		}
 	}
@@ -66,12 +65,12 @@ public class ThreadPool implements Debuggable{
 	/**
 	 * create all threads and let them run
 	 */
-	private void initializeThreads(){
-		for (int i = 0; i < threads.length; i++){
+	private void initializeThreads() {
+		for (int i = 0; i < threads.length; i++) {
 			threads[i] = new WorkerThread(this);
 		}
 		
-		for (WorkerThread w : this.threads){
+		for (WorkerThread w : this.threads) {
 			w.start();
 		}
 	}
@@ -82,8 +81,7 @@ public class ThreadPool implements Debuggable{
 	 * @param r job that has to be executed asynchronously
 	 * @throws InterruptedException 
 	 */
-	public void addToQueue(Runnable r) throws InterruptedException
-	{
+	public void addToQueue(Runnable r) throws InterruptedException {
 		jobQueueLock.lock();	
 		jobQueue.add(r);
 		Test.jobQueue.add((r).hashCode());//for testing
@@ -100,18 +98,18 @@ public class ThreadPool implements Debuggable{
 	 * @throws InterruptedException 
 	 */
 	public Runnable getJob() throws InterruptedException {
-		while (true){
+		while (true) {
 			Runnable r = null;
 			jobQueueLock.lock();
 			if (!jobQueue.isEmpty())
 				r = jobQueue.removeFirst();
 			jobQueueLock.unlock();
 			
-			if (r==null){
+			if (r==null) {
 				cvLock.lock();
 				jobQueueNotEmpty.await();
 				cvLock.unlock();
-			}else{
+			} else {
 				return r;
 			}
 		}
@@ -128,13 +126,10 @@ class WorkerThread extends Thread implements Debuggable {
 	 * @param o the thread pool 
 	 */
 	private static int workerThreadCounter = 0;
-	
 	private ThreadPool o;
-	
 	private boolean run = true;
 	
-	WorkerThread(ThreadPool o)
-	{
+	WorkerThread(ThreadPool o) {
 		this.o = o;
 		this.setName("WorkerThread"+WorkerThread.workerThreadCounter++);
 	}
@@ -142,8 +137,7 @@ class WorkerThread extends Thread implements Debuggable {
 	/**
 	 * Scan for and execute tasks.
 	 */
-	public void run()
-	{
+	public void run() {
 		while (run){
 			Runnable r = null;
 			try {
@@ -156,8 +150,7 @@ class WorkerThread extends Thread implements Debuggable {
 		}
 	}
 	
-	public void signalFinish(){
+	public void signalFinish() {
 		this.run = false;
 	}
-	
 }
