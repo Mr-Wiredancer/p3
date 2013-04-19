@@ -42,9 +42,11 @@ public class Test implements Debuggable{
 	public void test() throws Exception{
 		testPut();
 		testGet();
+		testMultipleGet();
 		testDoublePut();
 		testGetKeyNotInStore();
 		testDel();
+		testDelKeyNotInStore();
 		testPutandDel();
 		pressuretest();
 
@@ -116,6 +118,12 @@ public class Test implements Debuggable{
     	check();
     }
     
+    public void testMultipleGet() throws Exception{
+    	init();
+    	TestHelper t = new TestHelper("1,put,k1,v1;2,get,k1;3,get,k1;4,get,k1;5,get,k1");
+    	Thread.currentThread().sleep(500);
+    	check();
+    }
     
     public void testDoublePut() throws Exception{
     	init();
@@ -139,6 +147,14 @@ public class Test implements Debuggable{
     	check();
     	DEBUG.debug(resp.toString());
     }
+    
+    public void testDelKeyNotInStore() throws Exception{
+    	init();
+
+    	TestHelper t = new TestHelper("1,put,k1,v1;2,del,k2");
+    	Thread.currentThread().sleep(500);
+    	check();
+    }
 	
     public void testPutandDel() throws Exception{
     	init();
@@ -157,11 +173,11 @@ public class Test implements Debuggable{
     		gets = gets + (i+n) + ",get,k"+i+";";
     		dels = dels + (i+2*n) + ",del,k"+i+";";
     	}
-    	DEBUG.debug(puts+gets+dels);
+    	//DEBUG.debug(puts+gets+dels);
     	TestHelper t = new TestHelper(puts+gets+dels);
     	Thread.currentThread().sleep(2000);
     	check();
-    	DEBUG.debug("size is "+resp.size());
+    	//DEBUG.debug("size is "+resp.size());
     	
     }
     /* **
