@@ -32,8 +32,6 @@ package edu.berkeley.cs162;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
@@ -125,23 +123,21 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			}
 		
 			try{
-				// val should not be null. kvserver.get return non-null string or KVException.
-				if (val!=null){
-					//successful get
-					KVMessage successMsg = null;
-					try {
-						successMsg = new KVMessage(KVMessage.RESPTYPE);
-					} catch (KVException e) {
-						//silence this exception
-						DEBUG.debug("this error should not happen");
-						e.printStackTrace();
-					}
-					successMsg.setKey(msg.getKey());
-					successMsg.setValue(val);
-					successMsg.sendMessage(this.client);
-				}else{
-					DEBUG.debug("this should not be printed");
+				//successful get
+				assert(val!=null);
+				
+				KVMessage successMsg = null;
+				try {
+					successMsg = new KVMessage(KVMessage.RESPTYPE);
+				} catch (KVException e) {
+					//silence this exception
+					DEBUG.debug("this error should not happen");
+					e.printStackTrace();
+					return;
 				}
+				successMsg.setKey(msg.getKey());
+				successMsg.setValue(val);
+				successMsg.sendMessage(this.client);
 			}catch (KVException e){
 				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
