@@ -125,6 +125,7 @@ public class Test implements Debuggable{
     	check();
     }
     
+
     public void testDoublePut() throws Exception{
     	init();
     	TestHelper t = new TestHelper("1,put,k1,v1;2,put,k1,v2;3,get,k1");
@@ -145,8 +146,9 @@ public class Test implements Debuggable{
     	TestHelper t = new TestHelper("1,put,k1,v1;2,del,k1;3,get,k1");
     	Thread.currentThread().sleep(500);
     	check();
-    	DEBUG.debug(resp.toString());
+     //	DEBUG.debug(resp.toString());
     }
+
     
     public void testDelKeyNotInStore() throws Exception{
     	init();
