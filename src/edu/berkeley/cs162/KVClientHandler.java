@@ -59,10 +59,20 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 	public void cleanup(){
 		threadpool.cleanup();
 	}
-
+    
+	public ThreadPool getThreadPool(){
+		return this.threadpool;
+	}
+	
+			
+	
 	private class ClientHandler implements Runnable {
 		private KVServer kvServer = null;
 		private Socket client = null;
+		
+		public Socket getClient(){
+			return this.client;
+		}
 			
 		private void handlePut(KVMessage msg){
 			try {
@@ -70,6 +80,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			} catch (KVException e) {
 				try {
 					e.getMsg().sendMessage(this.client);
+					Test.respMap.put(this.hashCode(),e.getMsg());
 				} catch (KVException e1) {
 					DEBUG.debug("error happens when trying to send back error message");
 					e1.printStackTrace();
@@ -80,6 +91,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			try{
 				KVMessage successMsg = new KVMessage(KVMessage.RESPTYPE, "Success");
 				successMsg.sendMessage(this.client);
+				Test.respMap.put(this.hashCode(),successMsg);
 			}catch(KVException e){
 				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
@@ -92,6 +104,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			}catch (KVException e){
 				try {
 					e.getMsg().sendMessage(this.client);
+					Test.respMap.put(this.hashCode(),e.getMsg());
 				} catch (KVException e1) {
 					DEBUG.debug("error happens when trying to send back error message");
 					e1.printStackTrace();
@@ -102,6 +115,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			try{
 				KVMessage successMsg = new KVMessage(KVMessage.RESPTYPE, "Success");
 				successMsg.sendMessage(this.client);
+				Test.respMap.put(this.hashCode(),successMsg);
 			}catch(KVException e){
 				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
@@ -115,6 +129,7 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 			} catch (KVException e) {
 				try {
 					e.getMsg().sendMessage(this.client);
+					Test.respMap.put(this.hashCode(),e.getMsg());
 				} catch (KVException e1) {
 					DEBUG.debug("error happens when trying to send back error message");
 					e1.printStackTrace();
@@ -138,6 +153,8 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 				successMsg.setKey(msg.getKey());
 				successMsg.setValue(val);
 				successMsg.sendMessage(this.client);
+				Test.respMap.put(this.hashCode(),successMsg);
+
 			}catch (KVException e){
 				DEBUG.debug("error happens when trying to send back success message");
 				e.printStackTrace();
@@ -151,7 +168,8 @@ public class KVClientHandler implements NetworkHandler, Debuggable {
 		    	InputStream in = client.getInputStream();
 		    	 
 				KVMessage msg = new KVMessage(new KVMessage.NoCloseInputStream(in));
-
+				Test.messageMap.put(this.hashCode(),msg);
+				DEBUG.debug(this.hashCode()+msg.toXML());
 				//get request
 				if ( msg.getMsgType().equals(KVMessage.GETTYPE)){
 					DEBUG.debug("Get a get request of key "+msg.getKey());

@@ -104,8 +104,7 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			
 			String retVal = this.store.get(key);
 			if (retVal == null) {
-//			    KVMessage msg = new KVMessage("resp", "key \"" + key + "\" does not exist in store");
-				KVMessage msg = new KVMessage(KVMessage.RESPTYPE, "Does not exsit");
+				KVMessage msg = new KVMessage(KVMessage.RESPTYPE, "Does not exist");
 				throw new KVException(msg);
 			}
 			return retVal;
@@ -357,12 +356,11 @@ public class KVStore implements KeyValueInterface, Debuggable {
 			//not a valid XML
 			DEBUG.debug("this is not a valid xml");
 			e.printStackTrace();
-//			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "IO Error") );
+
 		} catch (IOException e) {
 			//io error
 			DEBUG.debug("io error");
 			e.printStackTrace();
-//			throw new KVException( new KVMessage(KVMessage.RESPTYPE, "IO Error") );
 
 		} catch (KVException e) {
 			DEBUG.debug(e.getMsg().getMessage());

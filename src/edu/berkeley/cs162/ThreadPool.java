@@ -86,6 +86,7 @@ public class ThreadPool implements Debuggable{
 	{
 		jobQueueLock.lock();	
 		jobQueue.add(r);
+		Test.jobQueue.add((r).hashCode());//for testing
 		jobQueueLock.unlock();
 		
 		cvLock.lock();

@@ -42,7 +42,7 @@ public class KVMessageTest {
 		msg.toXML();
 	}
 	
-	@Test
+	@Test	
 	public void buildXMLFailureTest(){
 		try{
 			KVMessage msg = new KVMessage(KVMessage.GETTYPE);
@@ -90,5 +90,6 @@ public class KVMessageTest {
 		}catch(KVException e){
 			assertEquals(e.getMsg().getMessage(), "Oversized key");
 		}
+
 	}
 }
