@@ -21,6 +21,7 @@ public class ThreadPoolTest {
 				}
 			});
 		}
+		Thread.sleep(1000);
 		assertTrue(threadCount == 20);
 	}
 
@@ -37,6 +38,7 @@ public class ThreadPoolTest {
 				}
 			});
 		}
+		Thread.sleep(1000);
 		assertTrue(threadCount == 3);
 
 	}

@@ -29,7 +29,7 @@ public class KVClientTest {
 		public void run(){
 			DEBUG.debug("Binding Server:");
 			KVServer key_server = new KVServer(100, 10);
-			SocketServer server = new SocketServer("localhost", 8080);
+			SocketServer server = new SocketServer("localhost", 3000);
 			NetworkHandler handler = new KVClientHandler(key_server);
 			server.addHandler(handler);
 			try {
@@ -47,7 +47,7 @@ public class KVClientTest {
 	 */
 	@BeforeClass
 	public static void reset(){
-		client = new KVClient("localhost", 8080);
+		client = new KVClient("localhost", 3000);
 		new ServerThread().start();
 		try {
 			Thread.currentThread().sleep(1000);

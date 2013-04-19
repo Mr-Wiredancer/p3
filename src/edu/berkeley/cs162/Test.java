@@ -8,9 +8,10 @@ import java.util.LinkedList;
 
 public class Test implements Debuggable{
 	public static int clientThreadCounter = 0;
-	public static HashMap<Integer, KVMessage> messageMap, respMap;
+	public static HashMap<Integer, KVMessage> messageMap = new HashMap<Integer, KVMessage>();
+	public static HashMap<Integer, KVMessage> respMap = new HashMap<Integer, KVMessage>();
 	public static ThreadPool threadPool;
-	public static LinkedList<Integer> jobQueue;
+	public static LinkedList<Integer> jobQueue = new LinkedList<Integer>();
 	public static LinkedList<KVMessage> request, resp;
 		
 	@org.junit.Test
