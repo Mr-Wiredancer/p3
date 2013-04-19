@@ -24,14 +24,14 @@ public class KVMessageTest {
   @Test
   public void testReconstructFromXML() {
     try {
-      xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><KVMessage type=\"resp\"><Message>this is a test msg</Message></KVMessage>";
-			in = new ByteArrayInputStream(xml.getBytes());
+    	String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><KVMessage type=\"resp\"><Message>this is a test msg</Message></KVMessage>";
+		ByteArrayInputStream in = new ByteArrayInputStream(xml.getBytes());
 			
-			newMsg = new KVMessage(in);
-			assertEquals(newMsg.getMsgType(), KVMessage.RESPTYPE);
-			assertEquals(newMsg.getMessage(), "this is a test msg");
-			assertEquals(newMsg.getValue(), null);
-			assertEquals(newMsg.getKey(), null);
+		KVMessage newMsg = new KVMessage(in);
+		assertEquals(newMsg.getMsgType(), KVMessage.RESPTYPE);
+		assertEquals(newMsg.getMessage(), "this is a test msg");
+		assertEquals(newMsg.getValue(), null);
+		assertEquals(newMsg.getKey(), null);
     }
     catch (KVException e) {
       fail();
@@ -44,15 +44,13 @@ public class KVMessageTest {
       KVMessage msg = new KVMessage(KVMessage.GETTYPE);
 			msg.setKey("key1");
 			msg.setValue("val1");
-      assertEquals("key1", msg.getKey());
-      assertEquals("val1", msg.getValue());
+		      assertEquals("key1", msg.getKey());
+		      assertEquals("val1", msg.getValue());
       
 			String xml = msg.toXML();
-			InputStream in = new ByteArrayInputStream(xml.getBytes());
-			
+			InputStream in = new ByteArrayInputStream(xml.getBytes());			
 			KVMessage newMsg = new KVMessage(in);
 			assertEquals(newMsg.getKey(), "key1");
-			assertEquals("val1", newMsg.getValue());
      }
      catch (KVException e) {
       fail();
@@ -71,7 +69,7 @@ public class KVMessageTest {
 			KVMessage msg = new KVMessage(KVMessage.GETTYPE);
 			msg.toXML();
 		} catch(KVException e) {
-			assertEquals(e.getMsg().getMessage(), "Unknown Error: not enough data to build XML");
+			assertEquals(e.getMsg().getMessage(), "Unknown Error: the key is null");
 		}
 		
 		try {
@@ -87,7 +85,7 @@ public class KVMessageTest {
 			msg.setValue("value1");
 			msg.toXML();
 		} catch(KVException e) {
-			assertEquals(e.getMsg().getMessage(), "Unknown Error: not enough data to build XML");
+			assertEquals(e.getMsg().getMessage(), "Unknown Error: the key is null");
 		}
 		
 		try {
@@ -95,7 +93,7 @@ public class KVMessageTest {
 			msg.setMessage("value1");
 			msg.toXML();
 		} catch(KVException e) {
-			assertEquals(e.getMsg().getMessage(), "Unknown Error: not enough data to build XML");
+			assertEquals(e.getMsg().getMessage(), "Unknown Error: the key is null");
 		}
 		
 		try {

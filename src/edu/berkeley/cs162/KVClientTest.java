@@ -3,6 +3,7 @@ package edu.berkeley.cs162;
 import static org.junit.Assert.*;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -11,14 +12,49 @@ import org.junit.Test;
  *
  */
 public class KVClientTest {
-  KVClient client;
+  static KVClient  client;
   
+  /**
+	 * The thread that runs KVServer codes
+	 * @author JL
+	 *
+	 */
+	private static class ServerThread extends Thread implements Debuggable {
+	
+		public ServerThread(){
+			super();
+			this.setName("ServerThread");
+		}
+		
+		public void run(){
+			DEBUG.debug("Binding Server:");
+			KVServer key_server = new KVServer(100, 10);
+			SocketServer server = new SocketServer("localhost", 8080);
+			NetworkHandler handler = new KVClientHandler(key_server);
+			server.addHandler(handler);
+			try {
+				server.connect();
+				DEBUG.debug("Starting Server");
+				server.run();
+			} catch (Exception e) {
+				DEBUG.debug("server shut down because of errors");
+				e.printStackTrace();
+			}
+		}
+	}
 	/**
 	 * set store to a clean state
 	 */
-	@Before
-	public void reset(){
+	@BeforeClass
+	public static void reset(){
 		client = new KVClient("localhost", 8080);
+		new ServerThread().start();
+		try {
+			Thread.currentThread().sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
   
   /** Test successful put. */
@@ -60,7 +96,7 @@ public class KVClientTest {
   /** Test get with nonexistent key. */
   @Test(expected = KVException.class)
   public void testGet2() throws KVException {
-    String result = client.get("key1");
+    String result = client.get("key3");
   }
   
   /** Test successful del. */
@@ -74,6 +110,6 @@ public class KVClientTest {
   /** Test del with nonexistent key. */
   @Test(expected = KVException.class)
   public void testDel2() throws KVException {
-    String result = client.delete("key1");
+    client.del("key");
   }
 }
