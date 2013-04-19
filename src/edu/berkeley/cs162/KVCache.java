@@ -179,6 +179,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
 		} catch (ParserConfigurationException e) {
 			DEBUG.debug("this should not happen");
 			e.printStackTrace();
+			return ""; // so that the rest doesn't break
 		}
  
 		// root element
@@ -239,6 +240,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
 		} catch (TransformerConfigurationException e) {
 			DEBUG.debug("this should not happen");
 			e.printStackTrace();
+			return ""; // so that the rest doesn't break
 		}
 		
 		StringWriter writer = new StringWriter();
@@ -252,6 +254,7 @@ public class KVCache implements KeyValueInterface, Debuggable {
 		} catch (TransformerException e) {
 			DEBUG.debug("this should not happen");
 			e.printStackTrace();
+			return ""; // so that the rest doesn't break
 		}
 		
 		String xml = writer.toString();
